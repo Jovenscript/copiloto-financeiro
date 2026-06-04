@@ -7,6 +7,7 @@ import { chaveMes, panoramaMes, gastosPorCategoria, comparaMeses, vencimentosPro
 import { infoCategoria } from '../core/schema';
 import Card from '../components/ui/Card';
 import Money, { formatarBRL } from '../components/ui/Money';
+import Evolucao from '../components/Evolucao';
 
 const aparece = {
   hidden: { opacity: 0, y: 12 },
@@ -126,6 +127,11 @@ export default function Inicio() {
             </div>
           )}
         </Card>
+      </motion.div>
+
+      {/* evolução */}
+      <motion.div custom={5} variants={aparece} initial="hidden" animate="show">
+        <Evolucao />
       </motion.div>
     </div>
   );

@@ -2,6 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { APP_NAME } from '../config';
 import RegistroRapido from './RegistroRapido';
+import Avisos from './Avisos';
 
 const ABAS = [
   { to: '/',             rotulo: 'Início',       icone: '◑' },
@@ -23,7 +24,10 @@ export default function Layout({ children }) {
           <p className="text-muted text-xs uppercase tracking-[0.2em]">{APP_NAME}</p>
           <h1 className="font-num text-2xl font-semibold tracking-tight">{tituloAtual}</h1>
         </div>
-        <button onClick={sair} className="text-muted hover:text-cream text-sm border border-line rounded-lg px-3 py-1.5 transition">Sair</button>
+        <div className="flex items-center gap-1">
+          <Avisos />
+          <button onClick={sair} className="text-muted hover:text-cream text-sm border border-line rounded-lg px-3 py-1.5 transition">Sair</button>
+        </div>
       </header>
 
       <main className="flex-1 px-5 pb-28">{children}</main>

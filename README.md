@@ -37,10 +37,11 @@ src/
 - **Insights automáticos** — categoria crescendo, maior gasto, % do financiamento na renda, parcelas ativas, assinaturas/ano
 - **Dados iniciais** — botões pra carregar suas contas conhecidas e suas metas
 - **Importação de planilha XLSX** — importa o orçamento do mês (Tipo/Descrição/Valor), categoriza sozinho, evita duplicar ao reimportar
+- **Central de Avisos (🔔)** — alertas de vencimento, gastos subindo, vermelho, metas atrasadas + notificação do navegador (app aberto)
+- **Evolução do saldo** — gráfico dos últimos 6 meses
 
 ### ▢ PRÓXIMO (web, mas preciso de você / mais trabalho)
 - **Cartão de crédito** — meio de pagamento + análise por categoria (refino do modelo)
-- **Evolução do patrimônio** — gráfico mês a mês (precisa do "fechamento mensal" automático)
 - **Relatórios** exportáveis
 
 ### ▢ DEPOIS (precisa de app nativo / IA / mais tempo)

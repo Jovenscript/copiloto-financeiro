@@ -194,3 +194,40 @@ export function gerarInsights({ lancs = [], recorrentes = [], parcelamentos = []
 function formatBRLnum(v) {
   return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
+
+// ---- Avisos (Central de Notificações) ----
+export function gerarAvisos({ lancs = [], recorrentes = [], parcelamentos = [], cofres = [], ym = chaveMes(), hoje = new Date() }) {
+  const avisos = [];
+  const v3 = vencimentosProximos({ recorrentes, parcelamentos, dias: 3, hoje });
+  const v7 = vencimentosProximos({ recorrentes, parcelamentos, dias: 7, hoje });
+  const ids3 = new Set(v3.map((x) => x.id));
+
+  v3.forEach((v) => avisos.push({ urgencia: 'alta', icone: '⏰', titulo: `${v.descricao} vence já já`, texto: `Dia ${v.data.slice(8)} · ${formatBRLnum(v.valor)}` }));
+  v7.filter((v) => !ids3.has(v.id)).forEach((v) => avisos.push({ urgencia: 'media', icone: '📅', titulo: v.descricao, texto: `Vence dia ${v.data.slice(8)} · ${formatBRLnum(v.valor)}` }));
+
+  const pan = panoramaMes({ lancs, recorrentes, parcelamentos, cofres, ym });
+  if (pan.disponivel < 0) avisos.push({ urgencia: 'alta', icone: '🚨', titulo: 'Você está no vermelho', texto: `Faltam ${formatBRLnum(Math.abs(pan.disponivel))} pros compromissos do mês.` });
+
+  const comp = comparaMeses(lancs, ym);
+  if (comp.variacaoDespesaPct !== null && comp.variacaoDespesaPct > 20) avisos.push({ urgencia: 'media', icone: '📈', titulo: 'Gastos subindo', texto: `${Math.round(comp.variacaoDespesaPct)}% a mais que mês passado.` });
+
+  cofres.forEach((c) => {
+    const s = statusCofre(c, hoje);
+    if (s && !s.ok) avisos.push({ urgencia: 'media', icone: '🎯', titulo: `${c.nome} atrasado`, texto: `Guarde ${formatBRLnum(s.necessario)}/mês pra chegar no prazo.` });
+  });
+
+  const ordem = { alta: 0, media: 1, baixa: 2 };
+  return avisos.sort((a, b) => ordem[a.urgencia] - ordem[b.urgencia]);
+}
+
+// ---- Evolução mensal (últimos N meses) ----
+export function evolucaoMensal(lancs = [], n = 6, hoje = new Date()) {
+  const meses = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+    const ym = chaveMes(d);
+    const t = totaisDoMes(lancs, ym);
+    meses.push({ ym, label: ym.slice(5) + '/' + ym.slice(2, 4), receitas: t.receitas, despesas: t.despesas, saldo: t.saldo });
+  }
+  return meses;
+}
