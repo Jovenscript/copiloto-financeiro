@@ -17,14 +17,13 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: 'COLE_AQUI',
-  authDomain: 'SEU_PROJETO.firebaseapp.com',
-  projectId: 'SEU_PROJETO',
-  storageBucket: 'SEU_PROJETO.appspot.com',
-  messagingSenderId: 'COLE_AQUI',
-  appId: 'COLE_AQUI',
+  apiKey: "AIzaSyB6rjNlFFxZFZAATL8s9UtnximvVi4leGs",
+  authDomain: "copiloto-financeiro-d6fae.firebaseapp.com",
+  projectId: "copiloto-financeiro-d6fae",
+  storageBucket: "copiloto-financeiro-d6fae.firebasestorage.app",
+  messagingSenderId: "756580366680",
+  appId: "1:756580366680:web:e391f7aacec324d02dcd2d"
 };
-
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
