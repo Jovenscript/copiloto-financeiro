@@ -11,6 +11,7 @@ import {
   novoLancamento, novoRecorrente, novoParcelamento,
   categoriasDespesa, infoCategoria, RECORRENTES_INICIAIS,
 } from '../core/schema';
+import { linkGoogleAgenda } from '../core/googleAgenda';
 import Card from '../components/ui/Card';
 import Money, { formatarBRL } from '../components/ui/Money';
 
@@ -92,6 +93,9 @@ export default function Compromissos() {
               return (
                 <ItemLinha key={r.id} icone={infoCategoria(r.categoria).icone} titulo={r.descricao}
                   sub={`vence dia ${r.diaVencimento}`} valor={r.valor} onRemove={() => rec.remover(r.id)}>
+                  <a href={linkGoogleAgenda({ descricao: r.descricao, valor: r.valor, diaVencimento: r.diaVencimento })}
+                    target="_blank" rel="noopener noreferrer" title="Adicionar ao Google Agenda"
+                    className="text-accent/60 hover:text-accent text-base px-1 transition">📅</a>
                   {pago ? (
                     <span className="text-positive text-xs px-2 py-1">✓ pago</span>
                   ) : (

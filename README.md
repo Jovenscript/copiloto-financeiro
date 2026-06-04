@@ -38,6 +38,8 @@ src/
 - **Dados iniciais** — botões pra carregar suas contas conhecidas e suas metas
 - **Importação de planilha XLSX** — importa o orçamento do mês (Tipo/Descrição/Valor), categoriza sozinho, evita duplicar ao reimportar
 - **Central de Avisos (🔔)** — alertas de vencimento, gastos subindo, vermelho, metas atrasadas + notificação do navegador (app aberto)
+- **Import inteligente** — você define o dia de vencimento de cada conta; despesas viram recorrentes, receitas viram entrada do mês
+- **Google Agenda** — botão que cria evento mensal recorrente no Google (ele notifica). Caminho esperto p/ lembretes, sem app nativo.
 - **Evolução do saldo** — gráfico dos últimos 6 meses
 
 ### ▢ PRÓXIMO (web, mas preciso de você / mais trabalho)
