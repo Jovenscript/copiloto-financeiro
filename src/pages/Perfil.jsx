@@ -15,6 +15,9 @@ export default function Perfil() {
       <Backup />
       <Roadmap />
 
+      <button onClick={() => { try { localStorage.removeItem('onboarded'); } catch (e) {} location.reload(); }}
+        className="w-full border border-line text-muted rounded-2xl py-3 hover:text-cream transition">👋 Rever tour de boas-vindas</button>
+
       <button onClick={sair} className="w-full border border-negative/40 text-negative rounded-2xl py-3 hover:bg-negative/10 transition">Sair da conta</button>
     </div>
   );

@@ -2,6 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { APP_NAME } from '../config';
 import RegistroRapido from './RegistroRapido';
+import Onboarding from './Onboarding';
 import Avisos from './Avisos';
 
 const ABAS = [
@@ -32,6 +33,7 @@ export default function Layout({ children }) {
       <main className="flex-1 px-5 pb-28">{children}</main>
 
       <RegistroRapido />
+      <Onboarding />
 
       <nav className="fixed bottom-0 inset-x-0 max-w-xl mx-auto bg-surface/95 backdrop-blur border-t border-line z-30">
         <div className="flex items-stretch justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
