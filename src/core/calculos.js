@@ -42,7 +42,12 @@ export function gastosPorCategoria(lancs, ym) {
 
 // ---- Recorrentes & parcelamentos ----
 export function recorrentesPendentes(recorrentes = [], ym = chaveMes()) {
-  return recorrentes.filter((r) => r.ativo !== false && r.ultimoPago !== ym);
+  return recorrentes.filter((r) => r.ativo !== false && r.ultimoPago !== ym && r.ignoradoMes !== ym);
+}
+// Data de vencimento considerando adiamento (se adiado pra dentro do mês atual)
+export function vencimentoEfetivo(r, ym = chaveMes()) {
+  if (r.adiadoAte && r.adiadoAte.startsWith(ym)) return r.adiadoAte;
+  return dataVencimento(r.diaVencimento, ym);
 }
 export function parcelamentosAtivos(parcelamentos = []) {
   return parcelamentos.filter((p) => (Number(p.parcelasPagas) || 0) < (Number(p.totalParcelas) || 0));
@@ -64,7 +69,7 @@ export function vencimentosProximos({ recorrentes = [], parcelamentos = [], dias
   const limite = new Date(h0); limite.setDate(limite.getDate() + dias);
   const itens = [];
   recorrentesPendentes(recorrentes, ym).forEach((r) => {
-    const data = dataVencimento(r.diaVencimento, ym);
+    const data = vencimentoEfetivo(r, ym);
     const dv = new Date(data + 'T12:00:00');
     if (dv >= h0 && dv <= limite) itens.push({ id: r.id, tipo: 'recorrente', descricao: r.descricao, valor: Number(r.valor) || 0, categoria: r.categoria, data });
   });

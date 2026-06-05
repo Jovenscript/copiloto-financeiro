@@ -60,6 +60,8 @@ export function novoRecorrente({ descricao, valor, categoria, diaVencimento } = 
     diaVencimento: clampDia(diaVencimento),
     ativo: true,
     ultimoPago: null, // 'YYYY-MM' do último mês pago
+    adiadoAte: null,  // 'YYYY-MM-DD' — lembrar de novo nessa data
+    ignoradoMes: null, // 'YYYY-MM' — pular alertas neste mês
     criadoEm: Date.now(),
   };
 }

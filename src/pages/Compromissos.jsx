@@ -40,6 +40,10 @@ export default function Compromissos() {
     await lanc.adicionar(novoLancamento({ tipo: 'despesa', valor: p.valorParcela, categoria: p.categoria, descricao: `${p.descricao} (${n}/${p.totalParcelas})`, data: dataVencimento(p.diaVencimento, ym), pago: true, origem: 'parcela' }));
     await parc.atualizar(p.id, { parcelasPagas: n, ultimoPago: ym });
   }
+  async function adiarRecorrente(r) {
+    const d = new Date(); d.setDate(d.getDate() + 3);
+    await rec.atualizar(r.id, { adiadoAte: d.toISOString().slice(0, 10) });
+  }
   async function carregarIniciais() {
     for (const r of RECORRENTES_INICIAIS) await rec.adicionar(novoRecorrente(r));
   }
@@ -92,16 +96,27 @@ export default function Compromissos() {
           <div className="space-y-2">
             {rec.recorrentes.map((r) => {
               const pago = r.ultimoPago === ym;
+              const ignorado = r.ignoradoMes === ym;
+              const adiado = r.adiadoAte && r.adiadoAte.startsWith(ym);
+              const resolvido = pago || ignorado;
               return (
                 <ItemLinha key={r.id} icone={infoCategoria(r.categoria).icone} titulo={r.descricao}
-                  sub={`vence dia ${r.diaVencimento}`} valor={r.valor} onRemove={() => rec.remover(r.id)}>
+                  sub={adiado && !resolvido ? `adiado p/ dia ${r.adiadoAte.slice(8)}` : `vence dia ${r.diaVencimento}`}
+                  valor={r.valor} onRemove={() => rec.remover(r.id)}>
                   <a href={linkGoogleAgenda({ descricao: r.descricao, valor: r.valor, diaVencimento: r.diaVencimento })}
-                    target="_blank" rel="noopener noreferrer" title="Adicionar ao Google Agenda"
+                    target="_blank" rel="noopener noreferrer" title="Google Agenda"
                     className="text-accent/60 hover:text-accent text-base px-1 transition">📅</a>
-                  {pago ? (
-                    <span className="text-positive text-xs px-2 py-1">✓ pago</span>
+                  {resolvido ? (
+                    <span className="flex items-center gap-1">
+                      <span className={`text-xs px-1.5 py-1 ${pago ? 'text-positive' : 'text-muted'}`}>{pago ? '✓ pago' : '— ignorado'}</span>
+                      {ignorado && <button onClick={() => rec.atualizar(r.id, { ignoradoMes: null })} title="desfazer" className="text-muted/50 hover:text-cream text-sm px-1">↩</button>}
+                    </span>
                   ) : (
-                    <button onClick={() => pagarRecorrente(r)} className="text-xs bg-accent/20 text-accent rounded-lg px-3 py-1.5 hover:bg-accent/30 transition">Pagar</button>
+                    <span className="flex items-center gap-1">
+                      <button onClick={() => pagarRecorrente(r)} title="Marcar como pago" className="text-xs bg-positive/20 text-positive rounded-lg px-2.5 py-1.5 hover:bg-positive/30 transition">✓</button>
+                      <button onClick={() => adiarRecorrente(r)} title="Adiar 3 dias" className="text-xs bg-accent/15 text-accent rounded-lg px-2.5 py-1.5 hover:bg-accent/25 transition">⏰</button>
+                      <button onClick={() => rec.atualizar(r.id, { ignoradoMes: ym })} title="Ignorar este mês" className="text-xs text-muted/50 hover:text-muted rounded-lg px-2 py-1.5 transition">✕</button>
+                    </span>
                   )}
                 </ItemLinha>
               );
