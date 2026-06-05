@@ -4,7 +4,7 @@ const FASES = [
   { n: 1, titulo: 'Reorganização', status: 'feito',
     itens: ['App dividido em 5 áreas: Início, Finanças, Agenda, IA, Perfil'] },
   { n: 2, titulo: 'Recursos profissionais', status: 'andamento',
-    itens: ['✅ Anti-esquecimento (Pago / Adiar / Ignorar)', '✅ Cartão de crédito (fatura por categoria)', '⏳ Onboarding guiado', '⏳ Backup e exportar dados'] },
+    itens: ['✅ Anti-esquecimento (Pago / Adiar / Ignorar)', '✅ Cartão de crédito (fatura por categoria)', '✅ Backup e exportar dados', '⏳ Onboarding guiado'] },
   { n: 3, titulo: 'IA Assistente', status: 'proximo',
     itens: ['Conversar com o app sobre suas finanças', 'Precisa de chave de API'] },
   { n: 4, titulo: 'App de celular (Capacitor)', status: 'futuro',
