@@ -4,6 +4,7 @@ import { useLancamentos } from '../hooks/useLancamentos';
 import { useRecorrentes } from '../hooks/useRecorrentes';
 import { useParcelamentos } from '../hooks/useParcelamentos';
 import { useCofres } from '../hooks/useCofres';
+import { useCompromissos } from '../hooks/useCompromissos';
 import { gerarAvisos, chaveMes } from '../core/calculos';
 
 const temNotif = typeof window !== 'undefined' && 'Notification' in window;
@@ -13,10 +14,11 @@ export default function Avisos() {
   const { recorrentes } = useRecorrentes();
   const { parcelamentos } = useParcelamentos();
   const { cofres } = useCofres();
+  const { compromissos } = useCompromissos();
   const [aberto, setAberto] = useState(false);
   const [permissao, setPermissao] = useState(temNotif ? Notification.permission : 'denied');
 
-  const avisos = gerarAvisos({ lancs: lancamentos, recorrentes, parcelamentos, cofres, ym: chaveMes() });
+  const avisos = gerarAvisos({ lancs: lancamentos, recorrentes, parcelamentos, cofres, compromissos, ym: chaveMes() });
   const count = avisos.filter((a) => a.urgencia !== 'baixa').length;
 
   // Notificação do navegador (no máx 1x/dia) se permitido e houver aviso urgente

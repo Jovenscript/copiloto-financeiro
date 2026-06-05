@@ -3,11 +3,11 @@ import { useLancamentos } from '../hooks/useLancamentos';
 import { useRecorrentes } from '../hooks/useRecorrentes';
 import { useParcelamentos } from '../hooks/useParcelamentos';
 import { useCofres } from '../hooks/useCofres';
-import { chaveMes, panoramaMes, gastosPorCategoria, comparaMeses, vencimentosProximos } from '../core/calculos';
+import { useCompromissos } from '../hooks/useCompromissos';
+import { chaveMes, panoramaMes, gastosPorCategoria, comparaMeses, vencimentosProximos, gerarAvisos } from '../core/calculos';
 import { infoCategoria } from '../core/schema';
 import Card from '../components/ui/Card';
 import Money, { formatarBRL } from '../components/ui/Money';
-import Evolucao from '../components/Evolucao';
 
 const aparece = {
   hidden: { opacity: 0, y: 12 },
@@ -20,10 +20,14 @@ export default function Inicio() {
   const { recorrentes } = useRecorrentes();
   const { parcelamentos } = useParcelamentos();
   const { cofres } = useCofres();
+  const { compromissos } = useCompromissos();
   const ym = chaveMes();
 
   if (carregando) return <Esqueleto />;
 
+  const urgentes = gerarAvisos({ lancs: lancamentos, recorrentes, parcelamentos, cofres, compromissos, ym }).filter((a) => a.urgencia === 'alta');
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const compromissosHoje = compromissos.filter((c) => c.data === hojeISO);
   const pan = panoramaMes({ lancs: lancamentos, recorrentes, parcelamentos, cofres, ym });
   const cats = gastosPorCategoria(lancamentos, ym).slice(0, 5);
   const comp = comparaMeses(lancamentos, ym);
@@ -33,6 +37,19 @@ export default function Inicio() {
 
   return (
     <div className="space-y-5">
+      {/* ANTI-ESQUECIMENTO — destaque do que precisa de atenção hoje */}
+      {urgentes.length > 0 && (
+        <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+          className="bg-negative/15 border border-negative/40 rounded-2xl p-4">
+          <p className="text-negative font-medium text-sm mb-2">🔴 Precisa de atenção hoje</p>
+          <div className="space-y-1">
+            {urgentes.map((a, i) => (
+              <p key={i} className="text-sm text-cream/90">{a.icone} <strong>{a.titulo}</strong> — {a.texto}</p>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* HERÓI — disponível de verdade */}
       <motion.div custom={0} variants={aparece} initial="hidden" animate="show">
         <Card className="text-center py-8 bg-gradient-to-b from-surface-2 to-surface">
@@ -129,10 +146,23 @@ export default function Inicio() {
         </Card>
       </motion.div>
 
-      {/* evolução */}
-      <motion.div custom={5} variants={aparece} initial="hidden" animate="show">
-        <Evolucao />
-      </motion.div>
+      {/* compromissos de hoje */}
+      {compromissosHoje.length > 0 && (
+        <motion.div custom={5} variants={aparece} initial="hidden" animate="show">
+          <Card>
+            <p className="font-num text-lg mb-3">📌 Hoje</p>
+            <div className="space-y-2">
+              {compromissosHoje.map((c) => (
+                <div key={c.id} className="flex items-center gap-3 text-sm">
+                  <span>📌</span>
+                  <span className="flex-1 truncate">{c.titulo}</span>
+                  {c.hora && <span className="text-muted text-xs">{c.hora}</span>}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }

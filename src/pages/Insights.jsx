@@ -4,6 +4,7 @@ import { useRecorrentes } from '../hooks/useRecorrentes';
 import { useParcelamentos } from '../hooks/useParcelamentos';
 import { gerarInsights, chaveMes } from '../core/calculos';
 import Card from '../components/ui/Card';
+import Evolucao from '../components/Evolucao';
 
 export default function Insights() {
   const { lancamentos, carregando } = useLancamentos();
@@ -16,7 +17,8 @@ export default function Insights() {
 
   return (
     <div className="space-y-3">
-      <p className="text-muted text-sm px-1 mb-2">O que eu percebi olhando seus números:</p>
+      <Evolucao />
+      <p className="text-muted text-sm px-1 mb-2 pt-2">O que eu percebi olhando seus números:</p>
       {insights.map((i, idx) => (
         <motion.div key={idx} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.08 }}>
           <Card className={`flex items-start gap-3 ${i.tipo === 'alerta' ? 'border-negative/30' : ''}`}>

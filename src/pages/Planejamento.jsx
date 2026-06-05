@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useCofres } from '../hooks/useCofres';
-import { progressoCofre, aporteNecessario, statusCofre } from '../core/calculos';
-import { novoCofre, COFRES_INICIAIS } from '../core/schema';
+import { useEnvelopes } from '../hooks/useEnvelopes';
+import { useLancamentos } from '../hooks/useLancamentos';
+import { progressoCofre, aporteNecessario, statusCofre, statusEnvelope } from '../core/calculos';
+import { novoCofre, novoEnvelope, COFRES_INICIAIS, categoriasDespesa, infoCategoria } from '../core/schema';
 import Card from '../components/ui/Card';
 import Money, { formatarBRL } from '../components/ui/Money';
 
@@ -64,6 +66,77 @@ export default function Planejamento() {
         </Card>
       ) : (
         cofres.map((c) => <CofreCard key={c.id} c={c} onDepositar={depositar} onRemove={() => remover(c.id)} />)
+      )}
+
+      <EnvelopesSection />
+    </div>
+  );
+}
+
+// ---- Envelopes / Reservas Mensais ----
+function EnvelopesSection() {
+  const { envelopes, adicionar, remover } = useEnvelopes();
+  const { lancamentos } = useLancamentos();
+  const [abrir, setAbrir] = useState(false);
+  const [form, setForm] = useState({ categoria: 'combustivel', metaMensal: '' });
+
+  async function salvar() {
+    if (!form.metaMensal) return;
+    await adicionar(novoEnvelope(form));
+    setForm({ categoria: 'combustivel', metaMensal: '' });
+    setAbrir(false);
+  }
+
+  return (
+    <div className="pt-2">
+      <div className="flex items-end justify-between mb-3 px-1">
+        <div>
+          <p className="font-num text-lg">📨 Envelopes do mês</p>
+          <p className="text-muted text-xs">orçamento que vai abatendo (combustível, mercado...)</p>
+        </div>
+        <button onClick={() => setAbrir(!abrir)} className="text-accent text-sm">{abrir ? 'cancelar' : '+ Novo'}</button>
+      </div>
+
+      <AnimatePresence>
+        {abrir && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <Card className="mb-3 space-y-2">
+              <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })} className={inputCls}>
+                {categoriasDespesa().map((c) => <option key={c.id} value={c.id}>{c.icone} {c.label}</option>)}
+              </select>
+              <input type="number" inputMode="decimal" placeholder="Meta mensal (ex: 400)" value={form.metaMensal} onChange={(e) => setForm({ ...form, metaMensal: e.target.value })} className={inputCls} />
+              <button onClick={salvar} className="w-full bg-accent text-bg font-semibold rounded-xl py-2.5 text-sm">Criar envelope</button>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {envelopes.length === 0 ? (
+        <p className="text-muted text-sm px-1">Nenhum envelope. Crie um pra Combustível, Mercado, Lazer...</p>
+      ) : (
+        <div className="space-y-2">
+          {envelopes.map((e) => {
+            const s = statusEnvelope(e, lancamentos);
+            const info = infoCategoria(e.categoria);
+            return (
+              <Card key={e.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">{info.icone} {info.label}</span>
+                  <button onClick={() => remover(e.id)} className="text-muted/40 hover:text-negative text-lg leading-none">×</button>
+                </div>
+                <div className="h-2.5 bg-bg rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${s.estourou ? 'bg-negative' : 'bg-positive'}`} style={{ width: `${s.pct}%` }} />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted">gastou {formatarBRL(s.gasto)} de {formatarBRL(s.meta)}</span>
+                  <span className={s.estourou ? 'text-negative' : 'text-positive'}>
+                    {s.estourou ? `estourou ${formatarBRL(-s.restante)}` : `sobram ${formatarBRL(s.restante)}`}
+                  </span>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );

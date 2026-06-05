@@ -138,3 +138,23 @@ export function categoriaPorDescricao(desc, tipo) {
   for (const [re, cat] of regras) if (re.test(d)) return cat;
   return 'outros';
 }
+
+// Compromisso NÃO-financeiro (médico, reunião...) — pra não esquecer nada
+export function novoCompromisso({ titulo, data, hora, nota } = {}) {
+  return {
+    titulo: (titulo || '').trim() || 'Compromisso',
+    data: data || hojeISO(),
+    hora: hora || '',
+    nota: (nota || '').trim(),
+    criadoEm: Date.now(),
+  };
+}
+
+// Envelope / Reserva Mensal — orçamento por categoria que abate com os gastos
+export function novoEnvelope({ categoria, metaMensal } = {}) {
+  return {
+    categoria: categoria || 'mercado',
+    metaMensal: Number(metaMensal) || 0,
+    criadoEm: Date.now(),
+  };
+}

@@ -3,10 +3,10 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import Layout from './components/Layout';
 import Inicio from './pages/Inicio';
-import Lancamentos from './pages/Lancamentos';
-import Planejamento from './pages/Planejamento';
-import Compromissos from './pages/Compromissos';
-import Insights from './pages/Insights';
+import Financas from './pages/Financas';
+import Agenda from './pages/Compromissos';
+import IA from './pages/IA';
+import Perfil from './pages/Perfil';
 
 // Porteiro: sem login -> tela de login. Com login -> o app.
 function Portao() {
@@ -25,10 +25,10 @@ function Portao() {
     <Layout>
       <Routes>
         <Route path="/" element={<Inicio />} />
-        <Route path="/lancamentos" element={<Lancamentos />} />
-        <Route path="/planejamento" element={<Planejamento />} />
-        <Route path="/compromissos" element={<Compromissos />} />
-        <Route path="/insights" element={<Insights />} />
+        <Route path="/financas" element={<Financas />} />
+        <Route path="/agenda" element={<Agenda />} />
+        <Route path="/ia" element={<IA />} />
+        <Route path="/perfil" element={<Perfil />} />
       </Routes>
     </Layout>
   );

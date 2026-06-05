@@ -5,11 +5,11 @@ import RegistroRapido from './RegistroRapido';
 import Avisos from './Avisos';
 
 const ABAS = [
-  { to: '/',             rotulo: 'Início',       icone: '◑' },
-  { to: '/lancamentos',  rotulo: 'Lançamentos',  icone: '↹' },
-  { to: '/planejamento', rotulo: 'Planejamento', icone: '◎' },
-  { to: '/compromissos', rotulo: 'Contas',       icone: '▤' },
-  { to: '/insights',     rotulo: 'Insights',     icone: '✦' },
+  { to: '/',         rotulo: 'Início',   icone: '◑' },
+  { to: '/financas', rotulo: 'Finanças', icone: '◎' },
+  { to: '/agenda',   rotulo: 'Agenda',   icone: '▤' },
+  { to: '/ia',       rotulo: 'IA',       icone: '✦' },
+  { to: '/perfil',   rotulo: 'Perfil',   icone: '☰' },
 ];
 
 export default function Layout({ children }) {
@@ -26,7 +26,6 @@ export default function Layout({ children }) {
         </div>
         <div className="flex items-center gap-1">
           <Avisos />
-          <button onClick={sair} className="text-muted hover:text-cream text-sm border border-line rounded-lg px-3 py-1.5 transition">Sair</button>
         </div>
       </header>
 

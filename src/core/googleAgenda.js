@@ -24,3 +24,23 @@ export function linkGoogleAgenda({ descricao, valor, diaVencimento }) {
 
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&recur=${recur}&details=${details}`;
 }
+
+// Evento ÚNICO (compromisso datado, ex: médico). All-day se sem hora.
+export function linkGoogleAgendaEvento({ titulo, data, hora, nota }) {
+  if (!data) return '#';
+  const [y, m, d] = data.split('-').map(Number);
+  const pad = (n) => String(n).padStart(2, '0');
+  let dates;
+  if (hora) {
+    const [hh, mm] = hora.split(':').map(Number);
+    const s = new Date(y, m - 1, d, hh, mm);
+    const e = new Date(s.getTime() + 60 * 60000);
+    dates = `${fmtData(s)}/${fmtData(e)}`;
+  } else {
+    const nx = new Date(y, m - 1, d + 1);
+    dates = `${y}${pad(m)}${pad(d)}/${nx.getFullYear()}${pad(nx.getMonth() + 1)}${pad(nx.getDate())}`;
+  }
+  const text = encodeURIComponent(titulo || 'Compromisso');
+  const details = encodeURIComponent(nota || 'Compromisso · Copiloto Financeiro');
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
+}

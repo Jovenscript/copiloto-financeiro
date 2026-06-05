@@ -196,7 +196,7 @@ function formatBRLnum(v) {
 }
 
 // ---- Avisos (Central de Notificações) ----
-export function gerarAvisos({ lancs = [], recorrentes = [], parcelamentos = [], cofres = [], ym = chaveMes(), hoje = new Date() }) {
+export function gerarAvisos({ lancs = [], recorrentes = [], parcelamentos = [], cofres = [], compromissos = [], ym = chaveMes(), hoje = new Date() }) {
   const avisos = [];
   const v3 = vencimentosProximos({ recorrentes, parcelamentos, dias: 3, hoje });
   const v7 = vencimentosProximos({ recorrentes, parcelamentos, dias: 7, hoje });
@@ -216,6 +216,14 @@ export function gerarAvisos({ lancs = [], recorrentes = [], parcelamentos = [], 
     if (s && !s.ok) avisos.push({ urgencia: 'media', icone: '🎯', titulo: `${c.nome} atrasado`, texto: `Guarde ${formatBRLnum(s.necessario)}/mês pra chegar no prazo.` });
   });
 
+  compromissos.forEach((c) => {
+    if (!c.data) return;
+    const dias = Math.round((new Date(c.data + 'T12:00:00') - stripTime(hoje)) / 86400000);
+    if (dias >= 0 && dias <= 3) {
+      avisos.push({ urgencia: dias <= 1 ? 'alta' : 'media', icone: '📌', titulo: c.titulo, texto: dias === 0 ? 'É hoje!' : dias === 1 ? 'É amanhã' : `Em ${dias} dias` + (c.hora ? ` · ${c.hora}` : '') });
+    }
+  });
+
   const ordem = { alta: 0, media: 1, baixa: 2 };
   return avisos.sort((a, b) => ordem[a.urgencia] - ordem[b.urgencia]);
 }
@@ -230,4 +238,15 @@ export function evolucaoMensal(lancs = [], n = 6, hoje = new Date()) {
     meses.push({ ym, label: ym.slice(5) + '/' + ym.slice(2, 4), receitas: t.receitas, despesas: t.despesas, saldo: t.saldo });
   }
   return meses;
+}
+
+// Envelopes (Reservas Mensais): quanto já gastou na categoria neste mês
+export function statusEnvelope(envelope, lancs = [], ym = chaveMes()) {
+  const gasto = lancs
+    .filter((l) => l.tipo === 'despesa' && l.categoria === envelope.categoria && (l.data || '').startsWith(ym))
+    .reduce((s, l) => s + (Number(l.valor) || 0), 0);
+  const meta = Number(envelope.metaMensal) || 0;
+  const restante = meta - gasto;
+  const pct = meta > 0 ? Math.min(100, (gasto / meta) * 100) : 0;
+  return { gasto, meta, restante, pct, estourou: gasto > meta };
 }

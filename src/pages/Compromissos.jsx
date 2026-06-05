@@ -3,15 +3,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useRecorrentes } from '../hooks/useRecorrentes';
 import { useParcelamentos } from '../hooks/useParcelamentos';
 import { useLancamentos } from '../hooks/useLancamentos';
+import { useCompromissos } from '../hooks/useCompromissos';
 import {
   chaveMes, dataVencimento, vencimentosProximos, projecaoProximoMes,
   recorrentesPendentes, parcelamentosAtivos, totalRecorrentes, pesoParcelamentos,
 } from '../core/calculos';
 import {
-  novoLancamento, novoRecorrente, novoParcelamento,
+  novoLancamento, novoRecorrente, novoParcelamento, novoCompromisso,
   categoriasDespesa, infoCategoria, RECORRENTES_INICIAIS,
 } from '../core/schema';
-import { linkGoogleAgenda } from '../core/googleAgenda';
+import { linkGoogleAgenda, linkGoogleAgendaEvento } from '../core/googleAgenda';
 import Card from '../components/ui/Card';
 import Money, { formatarBRL } from '../components/ui/Money';
 
@@ -21,6 +22,7 @@ export default function Compromissos() {
   const rec = useRecorrentes();
   const parc = useParcelamentos();
   const lanc = useLancamentos();
+  const comp = useCompromissos();
   const ym = chaveMes();
 
   const venc = vencimentosProximos({ recorrentes: rec.recorrentes, parcelamentos: parc.parcelamentos, dias: 7 });
@@ -149,11 +151,74 @@ export default function Compromissos() {
           </div>
         )}
       </Secao>
+
+      {/* COMPROMISSOS PESSOAIS (médico, exames, reuniões...) */}
+      <CompromissosSection comp={comp} />
     </div>
   );
 }
 
-// ---- Subcomponentes ----
+// ---- Seção de compromissos não-financeiros ----
+function CompromissosSection({ comp }) {
+  const [abrir, setAbrir] = useState(false);
+  const vazio = { titulo: '', data: '', hora: '', nota: '' };
+  const [form, setForm] = useState(vazio);
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const futuros = [...comp.compromissos].filter((c) => c.data >= hoje).sort((a, b) => a.data.localeCompare(b.data));
+
+  async function salvar() {
+    if (!form.titulo || !form.data) return;
+    await comp.adicionar(novoCompromisso(form));
+    setForm(vazio); setAbrir(false);
+  }
+
+  return (
+    <div>
+      <div className="flex items-end justify-between mb-3 px-1">
+        <div>
+          <p className="font-num text-lg">📌 Compromissos & lembretes</p>
+          <p className="text-muted text-xs">médico, exames, reuniões, eventos...</p>
+        </div>
+        <button onClick={() => setAbrir(!abrir)} className="text-accent text-sm">{abrir ? 'cancelar' : '+ Novo'}</button>
+      </div>
+
+      <AnimatePresence>
+        {abrir && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <Card className="mb-3 space-y-2">
+              <input type="text" placeholder="O quê? (ex: Consulta médica)" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} className={inputCls} />
+              <div className="flex gap-2">
+                <input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} className={inputCls + ' text-cream flex-1'} />
+                <input type="time" value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} className={inputCls + ' text-cream w-28'} />
+              </div>
+              <input type="text" placeholder="Nota (opcional)" value={form.nota} onChange={(e) => setForm({ ...form, nota: e.target.value })} className={inputCls} />
+              <button onClick={salvar} className="w-full bg-accent text-bg font-semibold rounded-xl py-2.5 text-sm">Adicionar</button>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {futuros.length === 0 ? (
+        <p className="text-muted text-sm px-1">Nenhum compromisso futuro. Adicione médico, exame, reunião...</p>
+      ) : (
+        <div className="space-y-2">
+          {futuros.map((c) => (
+            <div key={c.id} className="flex items-center gap-3 bg-surface border border-line rounded-2xl px-4 py-3">
+              <span className="text-xl">📌</span>
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-sm">{c.titulo}</p>
+                <p className="text-muted text-xs">{c.data.split('-').reverse().join('/')}{c.hora ? ` · ${c.hora}` : ''}{c.nota ? ` · ${c.nota}` : ''}</p>
+              </div>
+              <a href={linkGoogleAgendaEvento(c)} target="_blank" rel="noopener noreferrer" title="Google Agenda" className="text-accent/60 hover:text-accent text-base px-1 transition">📅</a>
+              <button onClick={() => comp.remover(c.id)} className="text-muted/40 hover:text-negative transition text-lg leading-none px-1">×</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 function Secao({ titulo, subtitulo, labelAdd, formFields, comCategoria, onAdd, children }) {
   const [abrir, setAbrir] = useState(false);
   const vazio = Object.fromEntries(formFields.map((f) => [f.k, '']));
