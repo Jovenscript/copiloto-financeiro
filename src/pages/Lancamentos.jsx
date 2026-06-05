@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLancamentos } from '../hooks/useLancamentos';
+import { useCartoes } from '../hooks/useCartoes';
 import { novoLancamento, categoriasDespesa, categoriasReceita, infoCategoria, hojeISO } from '../core/schema';
 import Card from '../components/ui/Card';
 import Money from '../components/ui/Money';
@@ -8,6 +9,7 @@ import ImportarPlanilha from '../components/ImportarPlanilha';
 
 export default function Lancamentos() {
   const { lancamentos, adicionar, remover, carregando } = useLancamentos();
+  const { cartoes } = useCartoes();
 
   const [importAberto, setImportAberto] = useState(false);
   const [tipo, setTipo] = useState('despesa');
@@ -15,6 +17,7 @@ export default function Lancamentos() {
   const [categoria, setCategoria] = useState('mercado');
   const [descricao, setDescricao] = useState('');
   const [data, setData] = useState(hojeISO());
+  const [cartaoId, setCartaoId] = useState('');
   const [salvando, setSalvando] = useState(false);
 
   const cats = tipo === 'receita' ? categoriasReceita() : categoriasDespesa();
@@ -24,7 +27,7 @@ export default function Lancamentos() {
     if (!valor || Number(valor) <= 0) return;
     setSalvando(true);
     try {
-      await adicionar(novoLancamento({ tipo, valor, categoria, descricao, data, pago: true }));
+      await adicionar(novoLancamento({ tipo, valor, categoria, descricao, data, pago: true, cartaoId: tipo === 'despesa' ? cartaoId : null }));
       setValor('');
       setDescricao('');
     } finally {
@@ -96,6 +99,14 @@ export default function Lancamentos() {
             type="date" value={data} onChange={(e) => setData(e.target.value)}
             className="w-full bg-surface-2 border border-line rounded-xl px-4 py-3 outline-none focus:border-accent transition text-cream"
           />
+
+          {tipo === 'despesa' && cartoes.length > 0 && (
+            <select value={cartaoId} onChange={(e) => setCartaoId(e.target.value)}
+              className="w-full bg-surface-2 border border-line rounded-xl px-4 py-3 outline-none focus:border-accent transition text-cream">
+              <option value="">💵 Sem cartão (dinheiro/débito)</option>
+              {cartoes.map((c) => <option key={c.id} value={c.id}>💳 {c.nome}</option>)}
+            </select>
+          )}
 
           <button
             type="submit" disabled={salvando}

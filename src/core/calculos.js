@@ -255,3 +255,14 @@ export function statusEnvelope(envelope, lancs = [], ym = chaveMes()) {
   const pct = meta > 0 ? Math.min(100, (gasto / meta) * 100) : 0;
   return { gasto, meta, restante, pct, estourou: gasto > meta };
 }
+
+// Fatura do cartão no mês: soma os lançamentos com aquele cartaoId
+export function faturaCartao(cartaoId, lancs = [], ym = chaveMes(), limite = 0) {
+  const doCartao = lancs.filter((l) => l.cartaoId === cartaoId && (l.data || '').startsWith(ym) && l.tipo === 'despesa');
+  const total = doCartao.reduce((s, l) => s + (Number(l.valor) || 0), 0);
+  const mapa = {};
+  doCartao.forEach((l) => { mapa[l.categoria] = (mapa[l.categoria] || 0) + (Number(l.valor) || 0); });
+  const porCategoria = Object.entries(mapa).map(([categoria, valor]) => ({ categoria, valor })).sort((a, b) => b.valor - a.valor);
+  const pctLimite = limite > 0 ? Math.min(100, (total / limite) * 100) : 0;
+  return { total, porCategoria, qtd: doCartao.length, pctLimite };
+}

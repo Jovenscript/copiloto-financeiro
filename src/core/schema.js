@@ -37,7 +37,7 @@ export function hojeISO() { return new Date().toISOString().slice(0, 10); }
 const clampDia = (d) => Math.min(31, Math.max(1, Number(d) || 1));
 
 // O que JÁ aconteceu
-export function novoLancamento({ data, tipo, valor, categoria, descricao, pago, origem } = {}) {
+export function novoLancamento({ data, tipo, valor, categoria, descricao, pago, origem, cartaoId } = {}) {
   const ehReceita = (tipo || '').toLowerCase() === 'receita';
   return {
     data: data || hojeISO(),
@@ -47,6 +47,7 @@ export function novoLancamento({ data, tipo, valor, categoria, descricao, pago, 
     descricao: (descricao || '').trim() || 'Sem descrição',
     pago: ehReceita ? true : !!pago,
     origem: origem || 'manual',
+    cartaoId: cartaoId || null,
     criadoEm: Date.now(),
   };
 }
@@ -157,6 +158,17 @@ export function novoEnvelope({ categoria, metaMensal } = {}) {
   return {
     categoria: categoria || 'mercado',
     metaMensal: Number(metaMensal) || 0,
+    criadoEm: Date.now(),
+  };
+}
+
+// Cartão de crédito — meio de pagamento (os gastos viram lançamentos com cartaoId)
+export function novoCartao({ nome, limite, diaFechamento, diaVencimento } = {}) {
+  return {
+    nome: (nome || '').trim() || 'Cartão',
+    limite: Number(limite) || 0,
+    diaFechamento: clampDia(diaFechamento || 1),
+    diaVencimento: clampDia(diaVencimento || 10),
     criadoEm: Date.now(),
   };
 }
