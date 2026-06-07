@@ -50,6 +50,9 @@ export default function Compromissos() {
 
   return (
     <div className="space-y-6">
+      {/* CALENDÁRIO DO MÊS */}
+      <CalendarioMes rec={rec} parc={parc} comp={comp} ym={ym} />
+
       {/* PROJEÇÃO PRÓXIMO MÊS */}
       <Card className="text-center py-6 bg-gradient-to-b from-surface-2 to-surface">
         <p className="text-muted text-xs uppercase tracking-[0.2em] mb-2">Você vai pagar mês que vem</p>
@@ -170,6 +173,76 @@ export default function Compromissos() {
       {/* COMPROMISSOS PESSOAIS (médico, exames, reuniões...) */}
       <CompromissosSection comp={comp} />
     </div>
+  );
+}
+
+// ---- Calendário do mês (grade de 7 colunas, à prova de bug de CSS) ----
+function CalendarioMes({ rec, parc, comp, ym }) {
+  const [sel, setSel] = useState(null);
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth(); // 0-11
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay(); // 0=Dom
+  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+
+  // monta o que tem em cada dia
+  const eventos = {};
+  const add = (dia, item) => { (eventos[dia] = eventos[dia] || []).push(item); };
+  rec.recorrentes.forEach((r) => {
+    if (r.ultimoPago === ym || r.ignoradoMes === ym) return;
+    add(Math.min(r.diaVencimento, diasNoMes), { ic: '💰', txt: `${r.descricao} · ${formatarBRL(r.valor)}` });
+  });
+  parc.parcelamentos.forEach((p) => {
+    const pagas = Number(p.parcelasPagas) || 0;
+    if (pagas >= p.totalParcelas || p.ultimoPago === ym) return;
+    add(Math.min(p.diaVencimento, diasNoMes), { ic: '🧾', txt: `${p.descricao} · ${formatarBRL(p.valorParcela)}` });
+  });
+  comp.compromissos.forEach((c) => {
+    if (!c.data || !c.data.startsWith(ym)) return;
+    add(Number(c.data.slice(8, 10)), { ic: '📌', txt: c.titulo + (c.hora ? ` · ${c.hora}` : '') });
+  });
+
+  const nomeMes = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const celulas = [];
+  for (let i = 0; i < primeiroDiaSemana; i++) celulas.push(null);
+  for (let d = 1; d <= diasNoMes; d++) celulas.push(d);
+
+  return (
+    <Card>
+      <p className="font-num text-lg mb-3 capitalize">📅 {nomeMes}</p>
+      {/* grid inline = imune a problema de CSS/Tailwind */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+        {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((w, i) => (
+          <div key={'w' + i} className="text-center text-[0.6rem] text-muted pb-1">{w}</div>
+        ))}
+        {celulas.map((d, i) => {
+          if (!d) return <div key={i} />;
+          const tem = eventos[d];
+          const ehHoje = d === hoje.getDate();
+          return (
+            <button key={i} onClick={() => setSel(sel === d ? null : d)}
+              className={`relative flex items-center justify-center aspect-square rounded-lg text-sm transition
+                ${ehHoje ? 'bg-accent text-bg font-semibold' : sel === d ? 'bg-surface-2 text-cream' : tem ? 'text-cream' : 'text-muted'}`}>
+              {d}
+              {tem && <span className={`absolute bottom-1 w-1 h-1 rounded-full ${ehHoje ? 'bg-bg' : 'bg-accent'}`} />}
+            </button>
+          );
+        })}
+      </div>
+
+      {sel && (
+        <div className="mt-3 pt-3 border-t border-line">
+          <p className="text-xs text-muted mb-1.5">Dia {sel}:</p>
+          {eventos[sel] ? (
+            <div className="space-y-1">
+              {eventos[sel].map((e, i) => <p key={i} className="text-sm">{e.ic} {e.txt}</p>)}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">nada marcado nesse dia.</p>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
