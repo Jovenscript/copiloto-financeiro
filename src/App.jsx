@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import Layout from './components/Layout';
@@ -15,7 +16,7 @@ function Portao() {
   if (carregando)
     return (
       <div className="min-h-full flex items-center justify-center">
-        <span className="text-accent text-2xl animate-pulse">◑</span>
+        <Loader2 className="text-accent animate-spin" size={32} />
       </div>
     );
 

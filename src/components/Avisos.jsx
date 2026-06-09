@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Bell } from 'lucide-react';
 import { useLancamentos } from '../hooks/useLancamentos';
 import { useRecorrentes } from '../hooks/useRecorrentes';
 import { useParcelamentos } from '../hooks/useParcelamentos';
@@ -41,10 +42,10 @@ export default function Avisos() {
 
   return (
     <>
-      <button onClick={() => setAberto(true)} className="relative text-cream/80 hover:text-cream text-xl px-1.5 transition" aria-label="Avisos">
-        🔔
+      <button onClick={() => setAberto(true)} className="relative text-cream/80 hover:text-cream p-1.5 transition" aria-label="Avisos">
+        <Bell size={22} />
         {count > 0 && (
-          <span className="absolute -top-1 right-0 bg-negative text-white text-[0.6rem] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">{count}</span>
+          <span className="absolute -top-0.5 right-0 bg-negative text-white text-[0.6rem] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">{count}</span>
         )}
       </button>
 

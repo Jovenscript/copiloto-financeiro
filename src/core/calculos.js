@@ -266,3 +266,21 @@ export function faturaCartao(cartaoId, lancs = [], ym = chaveMes(), limite = 0) 
   const pctLimite = limite > 0 ? Math.min(100, (total / limite) * 100) : 0;
   return { total, porCategoria, qtd: doCartao.length, pctLimite };
 }
+
+// Patrimônio: separa o que é REALMENTE seu do que é dívida (ex: dinheiro dos pais a devolver)
+export function patrimonio(cofres = []) {
+  const guardadoBruto = cofres.reduce((s, c) => s + (Number(c.guardado) || 0), 0);
+  const aDevolver = cofres.reduce((s, c) => s + (Number(c.devolver) || 0), 0);
+  const liquido = guardadoBruto - aDevolver;
+  return { guardadoBruto, aDevolver, liquido };
+}
+
+// Extrato: lançamentos dos últimos N dias, ordenado por data desc
+export function extratoPeriodo(lancs = [], dias = 60, hoje = new Date()) {
+  const limite = new Date(hoje);
+  limite.setDate(limite.getDate() - dias);
+  const limiteISO = limite.toISOString().slice(0, 10);
+  return lancs
+    .filter((l) => (l.data || '') >= limiteISO)
+    .sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+}

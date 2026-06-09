@@ -1,0 +1,11 @@
+{
+  "appId": "com.marlon.copiloto",
+  "appName": "Copiloto",
+  "webDir": "dist",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#e0a458"
+    }
+  }
+}

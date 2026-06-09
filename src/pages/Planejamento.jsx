@@ -76,7 +76,7 @@ export default function Planejamento() {
 
 function CofreCard({ c, onAtualizar, onRemove, onAbrir }) {
   const [editar, setEditar] = useState(false);
-  const [form, setForm] = useState({ nome: c.nome, alvo: c.alvo, aporteMensal: c.aporteMensal, guardado: c.guardado });
+  const [form, setForm] = useState({ nome: c.nome, alvo: c.alvo, aporteMensal: c.aporteMensal, guardado: c.guardado, devolver: c.devolver || 0 });
   const { pct, falta } = progressoCofre(c);
   const need = aporteNecessario(c);
   const status = statusCofre(c);
@@ -87,6 +87,7 @@ function CofreCard({ c, onAtualizar, onRemove, onAbrir }) {
       alvo: Number(form.alvo) || c.alvo,
       aporteMensal: Number(form.aporteMensal) || c.aporteMensal,
       guardado: Number(form.guardado) || c.guardado,
+      devolver: Number(form.devolver) || 0,
     });
     setEditar(false);
   }
@@ -100,9 +101,11 @@ function CofreCard({ c, onAtualizar, onRemove, onAbrir }) {
           <input type="number" inputMode="decimal" value={form.aporteMensal} onChange={(e) => setForm({ ...form, aporteMensal: e.target.value })} placeholder="Aporte/mês" className={inputCls} />
         </div>
         <input type="number" inputMode="decimal" value={form.guardado} onChange={(e) => setForm({ ...form, guardado: e.target.value })} placeholder="Guardado (dinheiro que você tem)" className={inputCls} />
+        <input type="number" inputMode="decimal" value={form.devolver} onChange={(e) => setForm({ ...form, devolver: e.target.value })} placeholder="A devolver (ex: dinheiro dos pais)" className={inputCls} />
+        <p className="text-muted text-[0.65rem] px-1">💡 "A devolver" = quanto desse guardado é dívida (não conta como seu patrimônio).</p>
         <div className="flex gap-2">
           <button onClick={salvarEdicao} className="flex-1 bg-accent text-bg font-semibold rounded-xl py-2.5 text-sm">Salvar</button>
-          <button onClick={() => { setEditar(false); setForm({ nome: c.nome, alvo: c.alvo, aporteMensal: c.aporteMensal, guardado: c.guardado }); }} className="bg-surface-2 border border-line rounded-xl px-4 text-sm">Cancelar</button>
+          <button onClick={() => { setEditar(false); setForm({ nome: c.nome, alvo: c.alvo, aporteMensal: c.aporteMensal, guardado: c.guardado, devolver: c.devolver || 0 }); }} className="bg-surface-2 border border-line rounded-xl px-4 text-sm">Cancelar</button>
         </div>
       </Card>
     );

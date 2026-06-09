@@ -1,21 +1,16 @@
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { useLancamentos } from '../hooks/useLancamentos';
 import { useRecorrentes } from '../hooks/useRecorrentes';
 import { useParcelamentos } from '../hooks/useParcelamentos';
 import { useCofres } from '../hooks/useCofres';
 import { useCompromissos } from '../hooks/useCompromissos';
-import { chaveMes, panoramaMes, gastosPorCategoria, comparaMeses, vencimentosProximos, gerarAvisos } from '../core/calculos';
-import { infoCategoria } from '../core/schema';
+import { chaveMes, panoramaMes, vencimentosProximos, gerarAvisos, patrimonio } from '../core/calculos';
 import Card from '../components/ui/Card';
-import Money, { formatarBRL } from '../components/ui/Money';
-
-const aparece = {
-  hidden: { opacity: 0, y: 12 },
-  show: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] } }),
-};
-const CORES = { positive: 'text-positive', negative: 'text-negative', accent: 'text-accent', muted: 'text-muted' };
+import { formatarBRL } from '../components/ui/Money';
 
 export default function Inicio() {
+  const nav = useNavigate();
   const { lancamentos, carregando } = useLancamentos();
   const { recorrentes } = useRecorrentes();
   const { parcelamentos } = useParcelamentos();
@@ -25,158 +20,143 @@ export default function Inicio() {
 
   if (carregando) return <Esqueleto />;
 
-  const urgentes = gerarAvisos({ lancs: lancamentos, recorrentes, parcelamentos, cofres, compromissos, ym }).filter((a) => a.urgencia === 'alta');
-  const hojeISO = new Date().toISOString().slice(0, 10);
-  const compromissosHoje = compromissos.filter((c) => c.data === hojeISO);
   const pan = panoramaMes({ lancs: lancamentos, recorrentes, parcelamentos, cofres, ym });
-  const cats = gastosPorCategoria(lancamentos, ym).slice(0, 5);
-  const comp = comparaMeses(lancamentos, ym);
+  const pat = patrimonio(cofres);
   const venc = vencimentosProximos({ recorrentes, parcelamentos, dias: 7 });
-  const maiorCat = cats[0]?.total || 1;
+  const urgentes = gerarAvisos({ lancs: lancamentos, recorrentes, parcelamentos, cofres, compromissos, ym }).filter((a) => a.urgencia === 'alta');
   const positivo = pan.disponivel >= 0;
 
   return (
-    <div className="space-y-5">
-      {/* ANTI-ESQUECIMENTO — destaque do que precisa de atenção hoje */}
+    <div className="space-y-6">
+      {/* ALERTA URGENTE */}
       {urgentes.length > 0 && (
-        <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
           className="bg-negative/15 border border-negative/40 rounded-2xl p-4">
-          <p className="text-negative font-medium text-sm mb-2">🔴 Precisa de atenção hoje</p>
-          <div className="space-y-1">
-            {urgentes.map((a, i) => (
-              <p key={i} className="text-sm text-cream/90">{a.icone} <strong>{a.titulo}</strong> — {a.texto}</p>
+          <p className="text-negative font-medium text-sm mb-2">🔴 Precisa de atenção</p>
+          {urgentes.map((a, i) => (
+            <p key={i} className="text-sm text-cream/90">{a.icone} <strong>{a.titulo}</strong> — {a.texto}</p>
+          ))}
+        </motion.div>
+      )}
+
+      {/* HERÓI — Disponível este mês */}
+      <Card className="text-center py-8 md:py-10 bg-gradient-to-b from-surface-2 to-surface">
+        <p className="text-muted text-xs uppercase tracking-[0.2em] mb-2">Disponível este mês</p>
+        <div className={`font-num text-5xl md:text-7xl font-semibold tracking-tight ${positivo ? 'text-positive' : 'text-negative'}`}>
+          {formatarBRL(pan.disponivel)}
+        </div>
+        <p className="text-muted text-sm mt-3">depois de gastos, contas e o que vai guardar</p>
+        {pan.saude.nivel !== '—' && (
+          <span className={`inline-block mt-3 text-xs px-3 py-1 rounded-full border border-line ${pan.saude.cor === 'positive' ? 'text-positive' : pan.saude.cor === 'negative' ? 'text-negative' : 'text-accent'}`}>
+            Saúde: {pan.saude.nivel}
+          </span>
+        )}
+      </Card>
+
+      {/* GRID PRINCIPAL — Entrou / Saiu / Comprometido / Guardar */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Bloco rotulo="Entrou" valor={pan.receitas} cor="text-positive" sub="receitas do mês" />
+        <Bloco rotulo="Saiu" valor={pan.despesas} cor="text-negative" sub="já gasto" />
+        <Bloco rotulo="A pagar" valor={pan.compRec + pan.compParc} cor="text-cream" sub="contas + parcelas" />
+        <Bloco rotulo="A guardar" valor={pan.compCofres} cor="text-accent" sub="metas do mês" />
+      </div>
+
+      {/* PATRIMÔNIO — visão de banco, com realidade dos valores */}
+      <Card className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="font-num text-xl font-semibold">🏦 Patrimônio</p>
+          <button onClick={() => nav('/financas')} className="text-accent text-sm">ver metas →</button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="bg-positive/10 border border-positive/30 rounded-xl px-4 py-3">
+            <p className="text-muted text-[0.65rem] uppercase tracking-wider">Patrimônio líquido</p>
+            <p className="font-num text-2xl md:text-3xl text-positive">{formatarBRL(pat.liquido)}</p>
+            <p className="text-muted text-xs mt-1">o que é realmente seu</p>
+          </div>
+          <div className="bg-surface-2 border border-line rounded-xl px-4 py-3">
+            <p className="text-muted text-[0.65rem] uppercase tracking-wider">Total guardado</p>
+            <p className="font-num text-2xl md:text-3xl">{formatarBRL(pat.guardadoBruto)}</p>
+            <p className="text-muted text-xs mt-1">em todos os cofres</p>
+          </div>
+          <div className="bg-negative/10 border border-negative/30 rounded-xl px-4 py-3">
+            <p className="text-muted text-[0.65rem] uppercase tracking-wider">A devolver</p>
+            <p className="font-num text-2xl md:text-3xl text-negative">{formatarBRL(pat.aDevolver)}</p>
+            <p className="text-muted text-xs mt-1">dívidas dentro do guardado</p>
+          </div>
+        </div>
+        {pat.aDevolver > 0 && (
+          <p className="text-xs text-muted bg-bg rounded-lg px-3 py-2">
+            ⚠ Você tem {formatarBRL(pat.guardadoBruto)} guardado, mas {formatarBRL(pat.aDevolver)} são compromisso (ex: a devolver aos pais). Disponível de verdade: <strong className="text-positive">{formatarBRL(pat.liquido)}</strong>.
+          </p>
+        )}
+      </Card>
+
+      {/* PRÓXIMOS VENCIMENTOS */}
+      {venc.length > 0 && (
+        <Card className="space-y-3">
+          <p className="font-num text-xl font-semibold">📅 Próximos 7 dias</p>
+          <div className="space-y-2">
+            {venc.slice(0, 6).map((v, i) => (
+              <div key={i} className="flex items-center justify-between text-sm border-b border-line/50 pb-2 last:border-0">
+                <span className="text-cream/90">{v.descricao}</span>
+                <div className="text-right">
+                  <span className="font-num text-cream">{formatarBRL(v.valor)}</span>
+                  <span className="text-muted text-xs block">{v.data.slice(8, 10)}/{v.data.slice(5, 7)}</span>
+                </div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </Card>
       )}
 
-      {/* HERÓI — disponível de verdade */}
-      <motion.div custom={0} variants={aparece} initial="hidden" animate="show">
-        <Card className="text-center py-8 bg-gradient-to-b from-surface-2 to-surface">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <p className="text-muted text-xs uppercase tracking-[0.2em]">Disponível este mês</p>
+      {/* METAS — mini status */}
+      {cofres.length > 0 && (
+        <Card className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="font-num text-xl font-semibold">🎯 Suas metas</p>
+            <button onClick={() => nav('/financas')} className="text-accent text-sm">abrir →</button>
           </div>
-          <div className={`font-num text-6xl font-semibold tracking-tight ${positivo ? 'text-positive' : 'text-negative'}`}>
-            {formatarBRL(pan.disponivel)}
-          </div>
-          <p className="text-muted text-sm mt-3">
-            depois de gastos, contas a pagar e metas
-          </p>
-          {pan.saude.nivel !== '—' && (
-            <span className={`inline-block mt-3 text-xs px-3 py-1 rounded-full border border-line ${CORES[pan.saude.cor]}`}>
-              Saúde: {pan.saude.nivel}
-            </span>
-          )}
-        </Card>
-      </motion.div>
-
-      {/* 3 colunas: entrou / saiu / comprometido */}
-      <motion.div custom={1} variants={aparece} initial="hidden" animate="show" className="grid grid-cols-3 gap-3">
-        <Card className="px-3 py-4">
-          <p className="text-muted text-[0.7rem] mb-1">Entrou</p>
-          <Money valor={pan.receitas} className="text-lg text-positive" />
-        </Card>
-        <Card className="px-3 py-4">
-          <p className="text-muted text-[0.7rem] mb-1">Saiu</p>
-          <Money valor={pan.despesas} className="text-lg text-negative" />
-        </Card>
-        <Card className="px-3 py-4">
-          <p className="text-muted text-[0.7rem] mb-1">Comprometido</p>
-          <Money valor={pan.comprometido} className="text-lg text-cream/90" />
-        </Card>
-      </motion.div>
-
-      {/* próximos vencimentos */}
-      {venc.length > 0 && (
-        <motion.div custom={2} variants={aparece} initial="hidden" animate="show">
-          <Card>
-            <p className="font-num text-lg mb-3">⏰ Próximos 7 dias</p>
-            <div className="space-y-2">
-              {venc.map((v) => (
-                <div key={v.id} className="flex justify-between items-center text-sm">
-                  <span>{infoCategoria(v.categoria).icone} {v.descricao}</span>
-                  <span className="text-muted">dia {v.data.slice(8)} · <Money valor={v.valor} className="text-cream/90" /></span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </motion.div>
-      )}
-
-      {/* comparação */}
-      {comp.variacaoDespesaPct !== null && (
-        <motion.div custom={3} variants={aparece} initial="hidden" animate="show">
-          <Card className="flex items-center gap-3">
-            <span className="text-2xl">{comp.variacaoDespesaPct > 0 ? '📈' : '📉'}</span>
-            <p className="text-sm text-cream/90">
-              Você gastou{' '}
-              <strong className={comp.variacaoDespesaPct > 0 ? 'text-negative' : 'text-positive'}>
-                {Math.abs(comp.variacaoDespesaPct).toFixed(0)}% {comp.variacaoDespesaPct > 0 ? 'a mais' : 'a menos'}
-              </strong>{' '}que mês passado.
-            </p>
-          </Card>
-        </motion.div>
-      )}
-
-      {/* pra onde foi */}
-      <motion.div custom={4} variants={aparece} initial="hidden" animate="show">
-        <Card>
-          <p className="font-num text-lg mb-4">Pra onde foi o dinheiro</p>
-          {cats.length === 0 ? (
-            <p className="text-muted text-sm">Nenhum gasto este mês ainda.</p>
-          ) : (
-            <div className="space-y-3">
-              {cats.map((c) => {
-                const info = infoCategoria(c.categoria);
-                const pct = (c.total / maiorCat) * 100;
-                return (
-                  <div key={c.categoria}>
-                    <div className="flex justify-between text-sm mb-1.5">
-                      <span>{info.icone} {info.label}</span>
-                      <Money valor={c.total} className="text-cream/90" />
-                    </div>
-                    <div className="h-2 bg-bg rounded-full overflow-hidden">
-                      <div className="h-full bg-accent rounded-full" style={{ width: `${pct}%` }} />
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {cofres.map((c) => {
+              const pct = c.alvo > 0 ? Math.min(100, (c.guardado / c.alvo) * 100) : 0;
+              return (
+                <div key={c.id} className="bg-surface-2 rounded-xl px-4 py-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm">{c.icone} {c.nome}</span>
+                    <span className="font-num text-accent text-sm">{pct.toFixed(0)}%</span>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-      </motion.div>
-
-      {/* compromissos de hoje */}
-      {compromissosHoje.length > 0 && (
-        <motion.div custom={5} variants={aparece} initial="hidden" animate="show">
-          <Card>
-            <p className="font-num text-lg mb-3">📌 Hoje</p>
-            <div className="space-y-2">
-              {compromissosHoje.map((c) => (
-                <div key={c.id} className="flex items-center gap-3 text-sm">
-                  <span>📌</span>
-                  <span className="flex-1 truncate">{c.titulo}</span>
-                  {c.hora && <span className="text-muted text-xs">{c.hora}</span>}
+                  <div className="h-2 bg-bg rounded-full overflow-hidden">
+                    <div className="h-full bg-accent rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-muted text-xs mt-1.5">{formatarBRL(c.guardado)} de {formatarBRL(c.alvo)}</p>
                 </div>
-              ))}
-            </div>
-          </Card>
-        </motion.div>
+              );
+            })}
+          </div>
+        </Card>
       )}
     </div>
+  );
+}
+
+function Bloco({ rotulo, valor, cor, sub }) {
+  return (
+    <Card className="px-4 py-4">
+      <p className="text-muted text-[0.7rem] uppercase tracking-wider mb-1">{rotulo}</p>
+      <p className={`font-num text-xl md:text-2xl font-semibold ${cor}`}>{formatarBRL(valor)}</p>
+      {sub && <p className="text-muted text-[0.65rem] mt-1">{sub}</p>}
+    </Card>
   );
 }
 
 function Esqueleto() {
   return (
     <div className="space-y-5 animate-pulse">
-      <div className="h-48 bg-surface rounded-[var(--radius-card)]" />
-      <div className="grid grid-cols-3 gap-3">
-        <div className="h-20 bg-surface rounded-[var(--radius-card)]" />
-        <div className="h-20 bg-surface rounded-[var(--radius-card)]" />
-        <div className="h-20 bg-surface rounded-[var(--radius-card)]" />
+      <div className="h-40 bg-surface rounded-2xl" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map((i) => <div key={i} className="h-24 bg-surface rounded-2xl" />)}
       </div>
-      <div className="h-40 bg-surface rounded-[var(--radius-card)]" />
+      <div className="h-48 bg-surface rounded-2xl" />
     </div>
   );
 }

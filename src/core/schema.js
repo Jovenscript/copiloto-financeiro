@@ -84,7 +84,7 @@ export function novoParcelamento({ descricao, valorParcela, totalParcelas, parce
 }
 
 // Cofre — meta com dinheiro REAL
-export function novoCofre({ nome, icone, alvo, guardado, aporteMensal, prazo, tipo, prioridade } = {}) {
+export function novoCofre({ nome, icone, alvo, guardado, aporteMensal, prazo, tipo, prioridade, devolver } = {}) {
   return {
     nome: (nome || '').trim() || 'Novo cofre',
     icone: icone || '🎯',
@@ -93,6 +93,7 @@ export function novoCofre({ nome, icone, alvo, guardado, aporteMensal, prazo, ti
     aporteMensal: Number(aporteMensal) || 0,
     prazo: prazo || null,
     tipo: tipo || 'reserva', // evento | reserva | compra
+    devolver: Number(devolver) || 0, // quanto desse guardado é dívida (ex: emprestado dos pais)
     prioridade: Number(prioridade) || 5,
     criadoEm: Date.now(),
   };
@@ -169,6 +170,30 @@ export function novoCartao({ nome, limite, diaFechamento, diaVencimento } = {}) 
     limite: Number(limite) || 0,
     diaFechamento: clampDia(diaFechamento || 1),
     diaVencimento: clampDia(diaVencimento || 10),
+    criadoEm: Date.now(),
+  };
+}
+
+// Fornecedor de uma meta (ex: buffet do casamento) — total, pago, falta
+export function novoFornecedor({ metaId, nome, categoria, valorTotal, valorPago, nota } = {}) {
+  return {
+    metaId: metaId || '',
+    nome: (nome || '').trim() || 'Fornecedor',
+    categoria: (categoria || '').trim(),
+    valorTotal: Number(valorTotal) || 0,
+    valorPago: Number(valorPago) || 0,
+    nota: (nota || '').trim(),
+    criadoEm: Date.now(),
+  };
+}
+
+// Convidado de uma meta (ex: casamento)
+export function novoConvidado({ metaId, nome, grupo, confirmado } = {}) {
+  return {
+    metaId: metaId || '',
+    nome: (nome || '').trim() || 'Convidado',
+    grupo: (grupo || '').trim(),
+    confirmado: !!confirmado,
     criadoEm: Date.now(),
   };
 }

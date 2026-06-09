@@ -7,10 +7,10 @@ const FASES = [
     itens: ['✅ Anti-esquecimento (Pago / Adiar / Ignorar)', '✅ Cartão de crédito (fatura por categoria)', '✅ Backup e exportar dados', '✅ Onboarding guiado'] },
   { n: 3, titulo: 'IA Assistente', status: 'proximo',
     itens: ['Conversar com o app sobre suas finanças', 'Precisa de chave de API'] },
-  { n: 4, titulo: 'App de celular (Capacitor)', status: 'futuro',
-    itens: ['Notificação nativa + vibração', 'Offline + ícone na tela inicial', 'Preparar pras lojas'] },
-  { n: 5, titulo: 'Polish & 3D', status: 'futuro',
-    itens: ['Animações caprichadas', 'Cofrinho 3D 🐷'] },
+  { n: 4, titulo: 'App de celular (Capacitor)', status: 'andamento',
+    itens: ['✅ PWA: instalável + offline', '✅ Código de notificação nativa + vibração pronto', '⏳ Build do APK (Android Studio, em casa)', '⏳ Publicar nas lojas'] },
+  { n: 5, titulo: 'Polish & 3D', status: 'andamento',
+    itens: ['✅ Ícones profissionais (lucide)', '✅ Transições suaves entre telas', '⏳ Cofrinho 3D 🐷'] },
 ];
 
 const ESTILO = {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Plus } from 'lucide-react';
 import { useLancamentos } from '../hooks/useLancamentos';
 import { novoLancamento, categoriasDespesa, categoriasReceita, hojeISO } from '../core/schema';
 
@@ -31,11 +32,11 @@ export default function RegistroRapido() {
       {/* FAB */}
       <button
         onClick={() => setAberto(true)}
-        className="fixed z-40 right-5 bottom-24 max-w-xl w-14 h-14 rounded-full bg-accent text-bg text-3xl font-light shadow-lg shadow-accent/30 flex items-center justify-center active:scale-95 transition"
+        className="fixed z-40 right-5 bottom-24 max-w-xl w-14 h-14 rounded-full bg-accent text-bg shadow-lg shadow-accent/30 flex items-center justify-center active:scale-95 transition"
         style={{ right: 'max(1.25rem, calc(50vw - 320px + 1.25rem))' }}
         aria-label="Registro rápido"
       >
-        +
+        <Plus size={28} strokeWidth={2.5} />
       </button>
 
       <AnimatePresence>
