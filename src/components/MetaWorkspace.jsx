@@ -171,13 +171,16 @@ function SecaoFornecedores({ forn, fornecedores, metaId, updGuardado }) {
 }
 
 function FornecedorCard({ f, forn }) {
+  const [editar, setEditar] = useState(false);
   const [pagar, setPagar] = useState(false);
   const [valor, setValor] = useState('');
+  const [edit, setEdit] = useState({ nome: f.nome, categoria: f.categoria || '', valorTotal: f.valorTotal, valorPago: f.valorPago });
+
   const total = Number(f.valorTotal) || 0;
   const pago = Number(f.valorPago) || 0;
   const falta = total - pago;
   const pct = total > 0 ? Math.min(100, (pago / total) * 100) : 0;
-  const quitado = falta <= 0;
+  const quitado = total > 0 && falta <= 0;
 
   async function registrar() {
     const v = Number(valor) || 0;
@@ -186,35 +189,66 @@ function FornecedorCard({ f, forn }) {
     setValor(''); setPagar(false);
   }
 
+  async function salvarEdicao() {
+    await forn.atualizar(f.id, {
+      nome: (edit.nome || '').trim() || 'Sem nome',
+      categoria: (edit.categoria || '').trim(),
+      valorTotal: Number(edit.valorTotal) || 0,
+      valorPago: Number(edit.valorPago) || 0,
+    });
+    setEditar(false);
+  }
+
+  // MODO EDIÇÃO — formulário completo
+  if (editar) {
+    return (
+      <Card className="space-y-2 border-accent/40">
+        <input value={edit.nome} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} placeholder="Nome" className={inputCls} />
+        <input value={edit.categoria} onChange={(e) => setEdit({ ...edit, categoria: e.target.value })} placeholder="Categoria" className={inputCls} />
+        <div className="flex gap-2">
+          <input type="number" inputMode="decimal" value={edit.valorTotal} onChange={(e) => setEdit({ ...edit, valorTotal: e.target.value })} placeholder="Valor total" className={inputCls} />
+          <input type="number" inputMode="decimal" value={edit.valorPago} onChange={(e) => setEdit({ ...edit, valorPago: e.target.value })} placeholder="Já pago" className={inputCls} />
+        </div>
+        <div className="flex gap-2">
+          <button onClick={salvarEdicao} className="flex-1 bg-accent text-bg font-semibold rounded-xl py-2.5 text-sm">Salvar</button>
+          <button onClick={() => { setEditar(false); setEdit({ nome: f.nome, categoria: f.categoria || '', valorTotal: f.valorTotal, valorPago: f.valorPago }); }} className="bg-surface-2 border border-line text-cream rounded-xl px-4 text-sm">Cancelar</button>
+        </div>
+      </Card>
+    );
+  }
+
+  // MODO VISUALIZAÇÃO
   return (
     <Card className="space-y-2">
-      <div className="flex items-start justify-between">
+      <button onClick={() => setEditar(true)} className="w-full flex items-start justify-between text-left active:opacity-70">
         <div>
-          <p className="text-sm">{f.nome}</p>
+          <p className="text-sm font-medium">{f.nome}</p>
           {f.categoria && <p className="text-muted text-xs">{f.categoria}</p>}
         </div>
-        <button onClick={() => forn.remover(f.id)} className="text-muted/40 hover:text-negative text-lg leading-none">×</button>
-      </div>
+        <span className="text-muted text-xs">✏️ editar</span>
+      </button>
       <div className="h-2 bg-bg rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${quitado ? 'bg-positive' : 'bg-accent'}`} style={{ width: `${pct}%` }} />
       </div>
-      <div className="flex items-center justify-between text-xs">
+      <div className="flex justify-between text-xs">
         <span className="text-muted">pago {formatarBRL(pago)} de {formatarBRL(total)}</span>
-        {quitado ? <span className="text-positive">✓ quitado</span> : <span className="text-negative">falta {formatarBRL(falta)}</span>}
+        <span className={quitado ? 'text-positive' : 'text-cream/90'}>{quitado ? '✓ quitado' : `falta ${formatarBRL(falta)}`}</span>
       </div>
-      {!quitado && (
-        pagar ? (
-          <div className="flex gap-2">
-            <input type="number" inputMode="decimal" autoFocus placeholder="Valor do pagamento" value={valor} onChange={(e) => setValor(e.target.value)} className={inputCls} />
+      <div className="flex gap-2">
+        {pagar ? (
+          <>
+            <input type="number" inputMode="decimal" autoFocus placeholder="Valor pago agora" value={valor} onChange={(e) => setValor(e.target.value)} className={inputCls} />
             <button onClick={registrar} className="bg-accent text-bg font-semibold rounded-xl px-4 text-sm">OK</button>
-          </div>
+            <button onClick={() => { setPagar(false); setValor(''); }} className="bg-surface-2 border border-line rounded-xl px-3 text-sm">×</button>
+          </>
         ) : (
-          <div className="flex gap-2">
-            <button onClick={() => setPagar(true)} className="flex-1 bg-accent/15 text-accent rounded-xl py-2 text-sm hover:bg-accent/25 transition">+ Registrar pagamento</button>
-            <button onClick={() => forn.atualizar(f.id, { valorPago: total })} className="text-positive bg-positive/15 rounded-xl px-3 text-sm hover:bg-positive/25 transition" title="Quitar">✓</button>
-          </div>
-        )
-      )}
+          <>
+            {!quitado && <button onClick={() => setPagar(true)} className="flex-1 bg-positive/15 text-positive rounded-xl py-2 text-xs hover:bg-positive/25 transition">+ Pagamento</button>}
+            {!quitado && total > 0 && <button onClick={() => forn.atualizar(f.id, { valorPago: total })} className="text-positive bg-positive/15 rounded-xl px-3 text-sm hover:bg-positive/25 transition" title="Quitar">✓</button>}
+            <button onClick={() => forn.remover(f.id)} className="text-negative bg-negative/10 rounded-xl px-3 text-sm hover:bg-negative/20 transition">×</button>
+          </>
+        )}
+      </div>
     </Card>
   );
 }
