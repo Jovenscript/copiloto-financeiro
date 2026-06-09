@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useFornecedores } from '../hooks/useFornecedores';
 import { useConvidados } from '../hooks/useConvidados';
 import { novoFornecedor, novoConvidado } from '../core/metas';
+import { FORNECEDORES_CASAMENTO_PADRAO } from '../core/fornecedoresCasamentoPadrao';
 import { formatarBRL } from './ui/Money';
 import Card from './ui/Card';
 
@@ -63,7 +64,7 @@ export default function MetaWorkspace({ cofre, onFechar }) {
         </Card>
 
         {/* FORNECEDORES */}
-        <SecaoFornecedores forn={forn} fornecedores={fornecedores} metaId={cofre.id} />
+        <SecaoFornecedores forn={forn} fornecedores={fornecedores} metaId={cofre.id} cofreNome={cofre.nome} />
 
         {/* CONVIDADOS */}
         <SecaoConvidados conv={conv} convidados={convidados} metaId={cofre.id} total={convidados.length} confirmados={confirmados} />
@@ -73,15 +74,31 @@ export default function MetaWorkspace({ cofre, onFechar }) {
 }
 
 // ---- Fornecedores ----
-function SecaoFornecedores({ forn, fornecedores, metaId }) {
+function SecaoFornecedores({ forn, fornecedores, metaId, cofreNome }) {
   const [abrir, setAbrir] = useState(false);
+  const [carregando, setCarregando] = useState(false);
   const [form, setForm] = useState({ nome: '', categoria: '', valorTotal: '', valorPago: '' });
+
+  const ehCasamento = (cofreNome || '').toLowerCase().includes('casamento');
+  const podeCarregarPadrao = ehCasamento && fornecedores.length === 0;
 
   async function salvar() {
     if (!form.nome || !form.valorTotal) return;
     await forn.adicionar(novoFornecedor({ ...form, metaId }));
     setForm({ nome: '', categoria: '', valorTotal: '', valorPago: '' });
     setAbrir(false);
+  }
+
+  async function carregarPadrao() {
+    if (!window.confirm(`Vou cadastrar os ${FORNECEDORES_CASAMENTO_PADRAO.length} fornecedores padrão do casamento. Continuar?`)) return;
+    setCarregando(true);
+    try {
+      for (const f of FORNECEDORES_CASAMENTO_PADRAO) {
+        await forn.adicionar(novoFornecedor({ ...f, metaId }));
+      }
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
@@ -103,7 +120,17 @@ function SecaoFornecedores({ forn, fornecedores, metaId }) {
         </Card>
       )}
 
-      {fornecedores.length === 0 ? (
+      {podeCarregarPadrao && (
+        <Card className="mb-3 text-center space-y-2 border-accent/40">
+          <p className="text-sm text-cream">🪄 Carregar a lista padrão do casamento?</p>
+          <p className="text-muted text-xs">Cria os 21 itens (DJ, comida, bebidas, fotógrafo, decoração, igreja, etc.) com os valores e pagamentos do seu controle atual.</p>
+          <button onClick={carregarPadrao} disabled={carregando} className="w-full bg-accent text-bg font-semibold rounded-xl py-2.5 text-sm disabled:opacity-50">
+            {carregando ? 'Cadastrando...' : 'Carregar lista padrão'}
+          </button>
+        </Card>
+      )}
+
+      {fornecedores.length === 0 && !podeCarregarPadrao ? (
         <p className="text-muted text-sm px-1">Nenhum fornecedor ainda. Adicione buffet, fotografia, decoração...</p>
       ) : (
         <div className="space-y-2">
