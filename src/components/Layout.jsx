@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Home, Wallet, CalendarDays, Sparkles, User } from 'lucide-react';
+import { Home, Wallet, Target, CalendarDays, User } from 'lucide-react';
 import { APP_NAME } from '../config';
 import RegistroRapido from './RegistroRapido';
 import Onboarding from './Onboarding';
@@ -10,8 +10,8 @@ import Avisos from './Avisos';
 const ABAS = [
   { to: '/',         rotulo: 'Início',   Icone: Home },
   { to: '/financas', rotulo: 'Finanças', Icone: Wallet },
+  { to: '/metas',    rotulo: 'Metas',    Icone: Target },
   { to: '/agenda',   rotulo: 'Agenda',   Icone: CalendarDays },
-  { to: '/ia',       rotulo: 'IA',       Icone: Sparkles },
   { to: '/perfil',   rotulo: 'Perfil',   Icone: User },
 ];
 

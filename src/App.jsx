@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Layout from './components/Layout';
 import Inicio from './pages/Inicio';
 import Financas from './pages/Financas';
+import Metas from './pages/Metas';
 import Agenda from './pages/Compromissos';
 import IA from './pages/IA';
 import Perfil from './pages/Perfil';
@@ -27,6 +28,7 @@ function Portao() {
       <Routes>
         <Route path="/" element={<Inicio />} />
         <Route path="/financas" element={<Financas />} />
+        <Route path="/metas" element={<Metas />} />
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/ia" element={<IA />} />
         <Route path="/perfil" element={<Perfil />} />

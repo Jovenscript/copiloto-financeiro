@@ -5,7 +5,7 @@ import { useRecorrentes } from '../hooks/useRecorrentes';
 import { useParcelamentos } from '../hooks/useParcelamentos';
 import { useCofres } from '../hooks/useCofres';
 import { useCompromissos } from '../hooks/useCompromissos';
-import { chaveMes, panoramaMes, vencimentosProximos, gerarAvisos, patrimonio } from '../core/calculos';
+import { chaveMes, panoramaMes, vencimentosProximos, gerarAvisos } from '../core/calculos';
 import Card from '../components/ui/Card';
 import { formatarBRL } from '../components/ui/Money';
 
@@ -21,7 +21,6 @@ export default function Inicio() {
   if (carregando) return <Esqueleto />;
 
   const pan = panoramaMes({ lancs: lancamentos, recorrentes, parcelamentos, cofres, ym });
-  const pat = patrimonio(cofres);
   const venc = vencimentosProximos({ recorrentes, parcelamentos, dias: 7 });
   const urgentes = gerarAvisos({ lancs: lancamentos, recorrentes, parcelamentos, cofres, compromissos, ym }).filter((a) => a.urgencia === 'alta');
   const positivo = pan.disponivel >= 0;
@@ -61,36 +60,6 @@ export default function Inicio() {
         <Bloco rotulo="A guardar" valor={pan.compCofres} cor="text-accent" sub="metas do mês" />
       </div>
 
-      {/* PATRIMÔNIO — visão de banco, com realidade dos valores */}
-      <Card className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="font-num text-xl font-semibold">🏦 Patrimônio</p>
-          <button onClick={() => nav('/financas')} className="text-accent text-sm">ver metas →</button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-positive/10 border border-positive/30 rounded-xl px-4 py-3">
-            <p className="text-muted text-[0.65rem] uppercase tracking-wider">Patrimônio líquido</p>
-            <p className="font-num text-2xl md:text-3xl text-positive">{formatarBRL(pat.liquido)}</p>
-            <p className="text-muted text-xs mt-1">o que é realmente seu</p>
-          </div>
-          <div className="bg-surface-2 border border-line rounded-xl px-4 py-3">
-            <p className="text-muted text-[0.65rem] uppercase tracking-wider">Total guardado</p>
-            <p className="font-num text-2xl md:text-3xl">{formatarBRL(pat.guardadoBruto)}</p>
-            <p className="text-muted text-xs mt-1">em todos os cofres</p>
-          </div>
-          <div className="bg-negative/10 border border-negative/30 rounded-xl px-4 py-3">
-            <p className="text-muted text-[0.65rem] uppercase tracking-wider">A devolver</p>
-            <p className="font-num text-2xl md:text-3xl text-negative">{formatarBRL(pat.aDevolver)}</p>
-            <p className="text-muted text-xs mt-1">dívidas dentro do guardado</p>
-          </div>
-        </div>
-        {pat.aDevolver > 0 && (
-          <p className="text-xs text-muted bg-bg rounded-lg px-3 py-2">
-            ⚠ Você tem {formatarBRL(pat.guardadoBruto)} guardado, mas {formatarBRL(pat.aDevolver)} são compromisso (ex: a devolver aos pais). Disponível de verdade: <strong className="text-positive">{formatarBRL(pat.liquido)}</strong>.
-          </p>
-        )}
-      </Card>
-
       {/* PRÓXIMOS VENCIMENTOS */}
       {venc.length > 0 && (
         <Card className="space-y-3">
@@ -109,31 +78,16 @@ export default function Inicio() {
         </Card>
       )}
 
-      {/* METAS — mini status */}
+      {/* ACESSO ÀS METAS — discreto, sem mostrar valores (evita ansiedade) */}
       {cofres.length > 0 && (
-        <Card className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="font-num text-xl font-semibold">🎯 Suas metas</p>
-            <button onClick={() => nav('/financas')} className="text-accent text-sm">abrir →</button>
+        <button onClick={() => nav('/metas')}
+          className="w-full bg-surface border border-line rounded-2xl px-5 py-4 flex items-center justify-between hover:border-accent transition text-left">
+          <div>
+            <p className="font-num text-lg">🎯 Seus objetivos</p>
+            <p className="text-muted text-sm">casamento, carro, bebê e reservas — quando quiser planejar</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {cofres.map((c) => {
-              const pct = c.alvo > 0 ? Math.min(100, (c.guardado / c.alvo) * 100) : 0;
-              return (
-                <div key={c.id} className="bg-surface-2 rounded-xl px-4 py-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm">{c.icone} {c.nome}</span>
-                    <span className="font-num text-accent text-sm">{pct.toFixed(0)}%</span>
-                  </div>
-                  <div className="h-2 bg-bg rounded-full overflow-hidden">
-                    <div className="h-full bg-accent rounded-full" style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-muted text-xs mt-1.5">{formatarBRL(c.guardado)} de {formatarBRL(c.alvo)}</p>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+          <span className="text-accent text-xl">→</span>
+        </button>
       )}
     </div>
   );
