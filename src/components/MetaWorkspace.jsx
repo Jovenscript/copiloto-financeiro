@@ -29,42 +29,34 @@ export default function MetaWorkspace({ cofre, onFechar }) {
   return (
     <motion.div className="fixed inset-0 z-50 bg-bg overflow-y-auto"
       initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }}>
-      <div className="max-w-xl mx-auto px-5 pt-6 pb-24 space-y-5">
+      <div className="max-w-5xl mx-auto px-4 md:px-8 pt-6 pb-24 space-y-6">
 
         {/* HEADER */}
-        <div className="flex items-center gap-3">
-          <button onClick={onFechar} className="text-muted hover:text-cream p-1 -ml-1 text-2xl leading-none">←</button>
-          <span className="text-3xl">{cofre.icone}</span>
-          <div>
-            <h1 className="font-num text-2xl font-semibold leading-tight">{cofre.nome}</h1>
-            <p className="text-muted text-xs">ambiente da meta</p>
+        <div className="flex items-center gap-4 pb-4 border-b border-line">
+          <button onClick={onFechar} className="text-muted hover:text-cream text-3xl leading-none px-1 -ml-1">←</button>
+          <span className="text-4xl md:text-5xl">{cofre.icone}</span>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-num text-3xl md:text-4xl font-semibold leading-tight truncate">{cofre.nome}</h1>
+            <p className="text-muted text-sm">ambiente da meta · {fornecedores.length} fornecedor(es) · {convidados.length} convidado(s)</p>
           </div>
         </div>
 
-        {/* RESUMO — conversa com o resto */}
-        <Card className="space-y-3">
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <p className="text-muted text-[0.65rem] uppercase tracking-wide">Custo total</p>
-              <p className="font-num text-lg">{formatarBRL(custoTotal)}</p>
-            </div>
-            <div>
-              <p className="text-muted text-[0.65rem] uppercase tracking-wide">Já pago</p>
-              <p className="font-num text-lg text-positive">{formatarBRL(pago)}</p>
-            </div>
-            <div>
-              <p className="text-muted text-[0.65rem] uppercase tracking-wide">Falta pagar</p>
-              <p className="font-num text-lg text-negative">{formatarBRL(falta)}</p>
-            </div>
-          </div>
-          <div className={`rounded-xl px-3 py-2.5 text-sm ${cobre ? 'bg-positive/10 text-positive' : 'bg-negative/10 text-negative'}`}>
-            {falta <= 0
-              ? '🎉 Tudo pago! Nada pendente.'
-              : cobre
-                ? `✓ Você tem ${formatarBRL(guardado)} guardado — cobre os ${formatarBRL(falta)} que faltam.`
-                : `⚠ Guardado ${formatarBRL(guardado)} · faltam ${formatarBRL(falta)}. Faltam ${formatarBRL(falta - guardado)} pra cobrir.`}
-          </div>
-        </Card>
+        {/* RESUMO — 4 cards grandes, conversa com o resto */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <BlocoResumo rotulo="Custo total"  valor={custoTotal} />
+          <BlocoResumo rotulo="Já pago"      valor={pago}      cor="text-positive" />
+          <BlocoResumo rotulo="Falta pagar"  valor={falta}     cor="text-negative" />
+          <BlocoResumo rotulo="Guardado"     valor={guardado}  cor="text-accent" destacado />
+        </div>
+
+        {/* VEREDITO */}
+        <div className={`rounded-2xl px-5 py-4 text-base md:text-lg ${cobre ? 'bg-positive/10 text-positive border border-positive/30' : 'bg-negative/10 text-negative border border-negative/30'}`}>
+          {falta <= 0
+            ? '🎉 Tudo pago! Nada pendente.'
+            : cobre
+              ? `✓ Guardado ${formatarBRL(guardado)} — cobre os ${formatarBRL(falta)} que faltam (sobram ${formatarBRL(guardado - falta)}).`
+              : `⚠ Guardado ${formatarBRL(guardado)} · faltam pagar ${formatarBRL(falta)}. Faltam ${formatarBRL(falta - guardado)} pra cobrir.`}
+        </div>
 
         {/* FORNECEDORES */}
         <SecaoFornecedores forn={forn} fornecedores={fornecedores} metaId={cofre.id} updGuardado={updGuardado} />
@@ -73,6 +65,15 @@ export default function MetaWorkspace({ cofre, onFechar }) {
         <SecaoConvidados conv={conv} convidados={convidados} metaId={cofre.id} total={convidados.length} confirmados={confirmados} />
       </div>
     </motion.div>
+  );
+}
+
+function BlocoResumo({ rotulo, valor, cor = 'text-cream', destacado = false }) {
+  return (
+    <div className={`rounded-2xl px-4 py-3 md:py-4 ${destacado ? 'bg-accent/10 border border-accent/30' : 'bg-surface border border-line'}`}>
+      <p className="text-muted text-[0.65rem] md:text-xs uppercase tracking-wider">{rotulo}</p>
+      <p className={`font-num text-xl md:text-3xl font-semibold leading-tight mt-1 ${cor}`}>{formatarBRL(valor)}</p>
+    </div>
   );
 }
 
@@ -135,10 +136,20 @@ function SecaoFornecedores({ forn, fornecedores, metaId, updGuardado }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2 px-1">
-        <p className="font-num text-lg">🏢 Fornecedores</p>
-        <button onClick={() => setAbrir(!abrir)} className="text-accent text-sm">{abrir ? 'cancelar' : '+ Novo'}</button>
+      <div className="flex items-end justify-between mb-3">
+        <div>
+          <p className="font-num text-2xl font-semibold">🏢 Fornecedores</p>
+          <p className="text-muted text-xs">toca em qualquer um pra editar</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-muted text-xs hover:text-accent cursor-pointer transition">
+            {importando ? 'importando...' : '📥 importar json'}
+            <input type="file" accept=".json,application/json" className="hidden" onChange={importarJson} disabled={importando} />
+          </label>
+          <button onClick={() => setAbrir(!abrir)} className="text-accent text-sm font-medium">{abrir ? 'cancelar' : '+ Novo'}</button>
+        </div>
       </div>
+      {msg && <p className="text-xs text-muted mb-2 px-1">{msg}</p>}
 
       {abrir && (
         <Card className="mb-3 space-y-2">
@@ -152,17 +163,11 @@ function SecaoFornecedores({ forn, fornecedores, metaId, updGuardado }) {
         </Card>
       )}
 
-      {/* Import JSON do planner (formato: { items: [{ name, category, total, paid }] }) */}
-      <label className="block w-full text-center bg-surface-2 border border-line rounded-xl py-2.5 text-sm cursor-pointer hover:border-accent transition mb-2">
-        {importando ? 'Importando...' : '📥 Importar JSON (formato planner)'}
-        <input type="file" accept=".json,application/json" className="hidden" onChange={importarJson} disabled={importando} />
-      </label>
-      {msg && <p className="text-xs text-muted px-1 mb-2">{msg}</p>}
-
+      {/* Lista de fornecedores em grid responsivo (1 col mobile / 2 cols tablet / 3 cols desktop) */}
       {fornecedores.length === 0 ? (
-        <p className="text-muted text-sm px-1">Nenhum fornecedor ainda. Adicione manualmente ou importe seu JSON.</p>
+        <p className="text-muted text-sm px-1 py-6 text-center">Nenhum fornecedor ainda. Adicione manualmente ou importe seu JSON.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {fornecedores.map((f) => <FornecedorCard key={f.id} f={f} forn={forn} />)}
         </div>
       )}
@@ -269,7 +274,7 @@ function SecaoConvidados({ conv, convidados, metaId, total, confirmados }) {
     <div>
       <div className="flex items-center justify-between mb-2 px-1">
         <div>
-          <p className="font-num text-lg">👥 Convidados</p>
+          <p className="font-num text-2xl font-semibold">👥 Convidados</p>
           {total > 0 && <p className="text-muted text-xs">{confirmados} confirmados de {total}</p>}
         </div>
         <button onClick={() => setAbrir(!abrir)} className="text-accent text-sm">{abrir ? 'cancelar' : '+ Novo'}</button>
