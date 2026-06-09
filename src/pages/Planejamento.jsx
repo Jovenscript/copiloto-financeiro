@@ -24,21 +24,15 @@ export default function Planejamento() {
     setAbrir(false);
   }
   async function criarIniciais() { for (const c of COFRES_INICIAIS) await adicionar(novoCofre(c)); }
-  async function depositar(c, valor) {
-    const v = Number(valor) || 0;
-    if (v <= 0) return;
-    await atualizar(c.id, { guardado: (Number(c.guardado) || 0) + v });
-  }
 
   if (carregando) return <div className="space-y-4 animate-pulse"><div className="h-40 bg-surface rounded-[var(--radius-card)]" /><div className="h-40 bg-surface rounded-[var(--radius-card)]" /></div>;
 
-  // cofre vivo (atualiza guardado em tempo real dentro do ambiente)
   const cofreVivo = metaAberta ? (cofres.find((c) => c.id === metaAberta.id) || metaAberta) : null;
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between px-1">
-        <p className="text-muted text-sm">Cofres com dinheiro real — progresso calculado.</p>
+        <p className="text-muted text-sm">Metas com dinheiro real — tudo editável.</p>
         <button onClick={() => setAbrir(!abrir)} className="text-accent text-sm whitespace-nowrap">{abrir ? 'cancelar' : '+ Novo cofre'}</button>
       </div>
 
@@ -70,20 +64,105 @@ export default function Planejamento() {
           <button onClick={criarIniciais} className="text-sm bg-accent/20 text-accent rounded-xl px-4 py-2 hover:bg-accent/30 transition">⚡ Criar Casamento, Bebê e Reserva</button>
         </Card>
       ) : (
-        cofres.map((c) => <CofreCard key={c.id} c={c} onDepositar={depositar} onRemove={() => remover(c.id)} onAbrir={() => setMetaAberta(c)} />)
+        cofres.map((c) => <CofreCard key={c.id} c={c} onAtualizar={atualizar} onRemove={() => remover(c.id)} onAbrir={() => setMetaAberta(c)} />)
       )}
 
       <EnvelopesSection />
 
-      {/* AMBIENTE FOCADO DA META (casamento, bebê, emergência...) */}
-      <AnimatePresence>
-        {cofreVivo && <MetaWorkspace cofre={cofreVivo} onFechar={() => setMetaAberta(null)} />}
-      </AnimatePresence>
+      {cofreVivo && <MetaWorkspace cofre={cofreVivo} onFechar={() => setMetaAberta(null)} />}
     </div>
   );
 }
 
-// ---- Envelopes / Reservas Mensais ----
+function CofreCard({ c, onAtualizar, onRemove, onAbrir }) {
+  const [editar, setEditar] = useState(false);
+  const [form, setForm] = useState({ nome: c.nome, alvo: c.alvo, aporteMensal: c.aporteMensal, guardado: c.guardado });
+  const { pct, falta } = progressoCofre(c);
+  const need = aporteNecessario(c);
+  const status = statusCofre(c);
+
+  async function salvarEdicao() {
+    await onAtualizar(c.id, {
+      nome: (form.nome || '').trim() || c.nome,
+      alvo: Number(form.alvo) || c.alvo,
+      aporteMensal: Number(form.aporteMensal) || c.aporteMensal,
+      guardado: Number(form.guardado) || c.guardado,
+    });
+    setEditar(false);
+  }
+
+  if (editar) {
+    return (
+      <Card className="space-y-2 border-accent/40">
+        <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome do cofre" className={inputCls} />
+        <div className="flex gap-2">
+          <input type="number" inputMode="decimal" value={form.alvo} onChange={(e) => setForm({ ...form, alvo: e.target.value })} placeholder="Alvo" className={inputCls} />
+          <input type="number" inputMode="decimal" value={form.aporteMensal} onChange={(e) => setForm({ ...form, aporteMensal: e.target.value })} placeholder="Aporte/mês" className={inputCls} />
+        </div>
+        <input type="number" inputMode="decimal" value={form.guardado} onChange={(e) => setForm({ ...form, guardado: e.target.value })} placeholder="Guardado (dinheiro que você tem)" className={inputCls} />
+        <div className="flex gap-2">
+          <button onClick={salvarEdicao} className="flex-1 bg-accent text-bg font-semibold rounded-xl py-2.5 text-sm">Salvar</button>
+          <button onClick={() => { setEditar(false); setForm({ nome: c.nome, alvo: c.alvo, aporteMensal: c.aporteMensal, guardado: c.guardado }); }} className="bg-surface-2 border border-line rounded-xl px-4 text-sm">Cancelar</button>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="space-y-3">
+      <button onClick={() => setEditar(true)} className="w-full flex items-start justify-between text-left active:opacity-70 transition">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">{c.icone}</span>
+          <div>
+            <p className="font-num text-lg leading-tight">{c.nome}</p>
+            <p className="text-muted text-xs">{formatarBRL(c.guardado)} guardado de {formatarBRL(c.alvo)}</p>
+          </div>
+        </div>
+        <span className="font-num text-accent text-lg">{pct.toFixed(0)}%</span>
+      </button>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-accent/10 border border-accent/30 rounded-xl px-3 py-2">
+          <p className="text-muted text-[0.65rem] uppercase tracking-wider">Guardado</p>
+          <p className="font-num text-xl text-accent">{formatarBRL(c.guardado)}</p>
+        </div>
+        <div className="bg-surface-2 border border-line rounded-xl px-3 py-2">
+          <p className="text-muted text-[0.65rem] uppercase tracking-wider">Falta</p>
+          <p className="font-num text-xl text-negative">{formatarBRL(falta)}</p>
+        </div>
+      </div>
+
+      <div className="h-2.5 bg-bg rounded-full overflow-hidden">
+        <motion.div className="h-full bg-accent rounded-full" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
+      </div>
+
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted">faltam <strong className="text-cream/90">{formatarBRL(falta)}</strong></span>
+        {need.mensal !== null && need.meses > 0 && (
+          <span className="text-muted">guarde <strong className="text-cream/90">{formatarBRL(need.mensal)}</strong>/mês ({need.meses}m)</span>
+        )}
+      </div>
+
+      {status && (
+        <div className={`text-xs rounded-lg px-3 py-2 ${status.ok ? 'bg-positive/10 text-positive' : 'bg-negative/10 text-negative'}`}>
+          {status.ok
+            ? `✓ No caminho — seu aporte de ${formatarBRL(status.planejado)} dá conta.`
+            : `⚠ Atrasado — guardando ${formatarBRL(status.planejado)}, mas precisa de ${formatarBRL(status.necessario)}/mês.`}
+        </div>
+      )}
+
+      <button onClick={onAbrir} className="w-full bg-surface-2 border border-line rounded-xl py-2 text-sm text-cream/90 hover:border-accent active:scale-[0.99] transition">
+        Abrir ambiente →
+      </button>
+
+      <div className="flex gap-2">
+        <button onClick={() => setEditar(true)} className="flex-1 bg-accent/20 text-accent rounded-xl py-2 text-sm hover:bg-accent/30 transition">✏️ Editar</button>
+        <button onClick={onRemove} className="text-muted/40 hover:text-negative transition px-3 text-lg">×</button>
+      </div>
+    </Card>
+  );
+}
+
 function EnvelopesSection() {
   const { envelopes, adicionar, remover } = useEnvelopes();
   const { lancamentos } = useLancamentos();
@@ -149,77 +228,5 @@ function EnvelopesSection() {
         </div>
       )}
     </div>
-  );
-}
-
-function CofreCard({ c, onDepositar, onRemove, onAbrir }) {
-  const [dep, setDep] = useState(false);
-  const [valor, setValor] = useState('');
-  const { pct, falta } = progressoCofre(c);
-  const need = aporteNecessario(c);
-  const status = statusCofre(c);
-
-  return (
-    <Card className="space-y-3">
-      <button onClick={onAbrir} className="w-full flex items-start justify-between text-left active:opacity-70 transition">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">{c.icone}</span>
-          <div>
-            <p className="font-num text-lg leading-tight">{c.nome}</p>
-            <p className="text-muted text-xs">{formatarBRL(c.guardado)} guardado de {formatarBRL(c.alvo)}</p>
-          </div>
-        </div>
-        <span className="font-num text-accent text-lg">{pct.toFixed(0)}%</span>
-      </button>
-
-      {/* DESTAQUE: Guardado + Falta em grande */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-accent/10 border border-accent/30 rounded-xl px-3 py-2">
-          <p className="text-muted text-[0.65rem] uppercase tracking-wider">Guardado</p>
-          <p className="font-num text-xl text-accent">{formatarBRL(c.guardado)}</p>
-        </div>
-        <div className="bg-surface-2 border border-line rounded-xl px-3 py-2">
-          <p className="text-muted text-[0.65rem] uppercase tracking-wider">Falta</p>
-          <p className="font-num text-xl text-negative">{formatarBRL(falta)}</p>
-        </div>
-      </div>
-
-      <div className="h-2.5 bg-bg rounded-full overflow-hidden">
-        <motion.div className="h-full bg-accent rounded-full" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
-      </div>
-
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted">faltam <strong className="text-cream/90">{formatarBRL(falta)}</strong></span>
-        {need.mensal !== null && need.meses > 0 && (
-          <span className="text-muted">guarde <strong className="text-cream/90">{formatarBRL(need.mensal)}</strong>/mês ({need.meses}m)</span>
-        )}
-      </div>
-
-      {status && (
-        <div className={`text-xs rounded-lg px-3 py-2 ${status.ok ? 'bg-positive/10 text-positive' : 'bg-negative/10 text-negative'}`}>
-          {status.ok
-            ? `✓ No caminho — seu aporte de ${formatarBRL(status.planejado)} dá conta.`
-            : `⚠ Atrasado — guardando ${formatarBRL(status.planejado)}, mas precisa de ${formatarBRL(status.necessario)}/mês.`}
-        </div>
-      )}
-
-      <button onClick={onAbrir} className="w-full bg-surface-2 border border-line rounded-xl py-2 text-sm text-cream/90 hover:border-accent active:scale-[0.99] transition">
-        Abrir ambiente →
-      </button>
-
-      <div className="flex gap-2">
-        {dep ? (
-          <>
-            <input type="number" inputMode="decimal" autoFocus placeholder="Quanto guardou?" value={valor} onChange={(e) => setValor(e.target.value)} className={inputCls} />
-            <button onClick={() => { onDepositar(c, valor); setValor(''); setDep(false); }} className="bg-accent text-bg font-semibold rounded-xl px-4 text-sm">OK</button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => setDep(true)} className="flex-1 bg-accent/20 text-accent rounded-xl py-2 text-sm hover:bg-accent/30 transition">+ Depositar</button>
-            <button onClick={onRemove} className="text-muted/40 hover:text-negative transition px-3 text-lg">×</button>
-          </>
-        )}
-      </div>
-    </Card>
   );
 }
