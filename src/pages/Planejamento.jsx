@@ -7,12 +7,14 @@ import { progressoCofre, aporteNecessario, statusCofre, statusEnvelope } from '.
 import { novoCofre, novoEnvelope, COFRES_INICIAIS, categoriasDespesa, infoCategoria } from '../core/schema';
 import Card from '../components/ui/Card';
 import Money, { formatarBRL } from '../components/ui/Money';
+import MetaWorkspace from '../components/MetaWorkspace';
 
 const inputCls = 'w-full bg-surface-2 border border-line rounded-xl px-3 py-2.5 outline-none focus:border-accent transition text-sm';
 
 export default function Planejamento() {
   const { cofres, carregando, adicionar, atualizar, remover } = useCofres();
   const [abrir, setAbrir] = useState(false);
+  const [metaAberta, setMetaAberta] = useState(null);
   const [form, setForm] = useState({ nome: '', icone: '🎯', alvo: '', aporteMensal: '', prazo: '', tipo: 'reserva' });
 
   async function salvar() {
@@ -29,6 +31,9 @@ export default function Planejamento() {
   }
 
   if (carregando) return <div className="space-y-4 animate-pulse"><div className="h-40 bg-surface rounded-[var(--radius-card)]" /><div className="h-40 bg-surface rounded-[var(--radius-card)]" /></div>;
+
+  // cofre vivo (atualiza guardado em tempo real dentro do ambiente)
+  const cofreVivo = metaAberta ? (cofres.find((c) => c.id === metaAberta.id) || metaAberta) : null;
 
   return (
     <div className="space-y-5">
@@ -65,10 +70,15 @@ export default function Planejamento() {
           <button onClick={criarIniciais} className="text-sm bg-accent/20 text-accent rounded-xl px-4 py-2 hover:bg-accent/30 transition">⚡ Criar Casamento, Bebê e Reserva</button>
         </Card>
       ) : (
-        cofres.map((c) => <CofreCard key={c.id} c={c} onDepositar={depositar} onRemove={() => remover(c.id)} />)
+        cofres.map((c) => <CofreCard key={c.id} c={c} onDepositar={depositar} onRemove={() => remover(c.id)} onAbrir={() => setMetaAberta(c)} />)
       )}
 
       <EnvelopesSection />
+
+      {/* AMBIENTE FOCADO DA META (casamento, bebê, emergência...) */}
+      <AnimatePresence>
+        {cofreVivo && <MetaWorkspace cofre={cofreVivo} onFechar={() => setMetaAberta(null)} />}
+      </AnimatePresence>
     </div>
   );
 }
@@ -142,7 +152,7 @@ function EnvelopesSection() {
   );
 }
 
-function CofreCard({ c, onDepositar, onRemove }) {
+function CofreCard({ c, onDepositar, onRemove, onAbrir }) {
   const [dep, setDep] = useState(false);
   const [valor, setValor] = useState('');
   const { pct, falta } = progressoCofre(c);
@@ -151,7 +161,7 @@ function CofreCard({ c, onDepositar, onRemove }) {
 
   return (
     <Card className="space-y-3">
-      <div className="flex items-start justify-between">
+      <button onClick={onAbrir} className="w-full flex items-start justify-between text-left active:opacity-70 transition">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{c.icone}</span>
           <div>
@@ -160,7 +170,7 @@ function CofreCard({ c, onDepositar, onRemove }) {
           </div>
         </div>
         <span className="font-num text-accent text-lg">{pct.toFixed(0)}%</span>
-      </div>
+      </button>
 
       <div className="h-2.5 bg-bg rounded-full overflow-hidden">
         <motion.div className="h-full bg-accent rounded-full" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
@@ -180,6 +190,10 @@ function CofreCard({ c, onDepositar, onRemove }) {
             : `⚠ Atrasado — guardando ${formatarBRL(status.planejado)}, mas precisa de ${formatarBRL(status.necessario)}/mês.`}
         </div>
       )}
+
+      <button onClick={onAbrir} className="w-full bg-surface-2 border border-line rounded-xl py-2 text-sm text-cream/90 hover:border-accent active:scale-[0.99] transition">
+        Abrir ambiente →
+      </button>
 
       <div className="flex gap-2">
         {dep ? (
