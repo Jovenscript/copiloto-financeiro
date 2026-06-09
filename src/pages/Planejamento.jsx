@@ -166,11 +166,23 @@ function CofreCard({ c, onDepositar, onRemove, onAbrir }) {
           <span className="text-2xl">{c.icone}</span>
           <div>
             <p className="font-num text-lg leading-tight">{c.nome}</p>
-            <p className="text-muted text-xs">{formatarBRL(c.guardado)} de {formatarBRL(c.alvo)}</p>
+            <p className="text-muted text-xs">{formatarBRL(c.guardado)} guardado de {formatarBRL(c.alvo)}</p>
           </div>
         </div>
         <span className="font-num text-accent text-lg">{pct.toFixed(0)}%</span>
       </button>
+
+      {/* DESTAQUE: Guardado + Falta em grande */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-accent/10 border border-accent/30 rounded-xl px-3 py-2">
+          <p className="text-muted text-[0.65rem] uppercase tracking-wider">Guardado</p>
+          <p className="font-num text-xl text-accent">{formatarBRL(c.guardado)}</p>
+        </div>
+        <div className="bg-surface-2 border border-line rounded-xl px-3 py-2">
+          <p className="text-muted text-[0.65rem] uppercase tracking-wider">Falta</p>
+          <p className="font-num text-xl text-negative">{formatarBRL(falta)}</p>
+        </div>
+      </div>
 
       <div className="h-2.5 bg-bg rounded-full overflow-hidden">
         <motion.div className="h-full bg-accent rounded-full" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
