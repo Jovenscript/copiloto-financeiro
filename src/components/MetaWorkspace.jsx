@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useFornecedores } from '../hooks/useFornecedores';
 import { useConvidados } from '../hooks/useConvidados';
+import { useCofres } from '../hooks/useCofres';
 import { novoFornecedor, novoConvidado } from '../core/metas';
-import { FORNECEDORES_CASAMENTO_PADRAO } from '../core/fornecedoresCasamentoPadrao';
 import { formatarBRL } from './ui/Money';
 import Card from './ui/Card';
 
@@ -12,9 +12,12 @@ const inputCls = 'w-full bg-surface-2 border border-line rounded-xl px-3 py-2.5 
 export default function MetaWorkspace({ cofre, onFechar }) {
   const forn = useFornecedores();
   const conv = useConvidados();
+  const cofres = useCofres();
 
   const fornecedores = forn.fornecedores.filter((f) => f.metaId === cofre.id);
   const convidados = conv.convidados.filter((c) => c.metaId === cofre.id);
+
+  const updGuardado = (delta) => cofres.atualizar(cofre.id, { guardado: (Number(cofre.guardado) || 0) + Number(delta || 0) });
 
   const custoTotal = fornecedores.reduce((s, f) => s + (Number(f.valorTotal) || 0), 0);
   const pago = fornecedores.reduce((s, f) => s + (Number(f.valorPago) || 0), 0);
@@ -64,7 +67,7 @@ export default function MetaWorkspace({ cofre, onFechar }) {
         </Card>
 
         {/* FORNECEDORES */}
-        <SecaoFornecedores forn={forn} fornecedores={fornecedores} metaId={cofre.id} cofreNome={cofre.nome} />
+        <SecaoFornecedores forn={forn} fornecedores={fornecedores} metaId={cofre.id} updGuardado={updGuardado} />
 
         {/* CONVIDADOS */}
         <SecaoConvidados conv={conv} convidados={convidados} metaId={cofre.id} total={convidados.length} confirmados={confirmados} />
@@ -74,13 +77,11 @@ export default function MetaWorkspace({ cofre, onFechar }) {
 }
 
 // ---- Fornecedores ----
-function SecaoFornecedores({ forn, fornecedores, metaId, cofreNome }) {
+function SecaoFornecedores({ forn, fornecedores, metaId, updGuardado }) {
   const [abrir, setAbrir] = useState(false);
-  const [carregando, setCarregando] = useState(false);
+  const [importando, setImportando] = useState(false);
+  const [msg, setMsg] = useState('');
   const [form, setForm] = useState({ nome: '', categoria: '', valorTotal: '', valorPago: '' });
-
-  const ehCasamento = (cofreNome || '').toLowerCase().includes('casamento');
-  const podeCarregarPadrao = ehCasamento && fornecedores.length === 0;
 
   async function salvar() {
     if (!form.nome || !form.valorTotal) return;
@@ -89,15 +90,46 @@ function SecaoFornecedores({ forn, fornecedores, metaId, cofreNome }) {
     setAbrir(false);
   }
 
-  async function carregarPadrao() {
-    if (!window.confirm(`Vou cadastrar os ${FORNECEDORES_CASAMENTO_PADRAO.length} fornecedores padrão do casamento. Continuar?`)) return;
-    setCarregando(true);
+  async function importarJson(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setMsg('');
     try {
-      for (const f of FORNECEDORES_CASAMENTO_PADRAO) {
-        await forn.adicionar(novoFornecedor({ ...f, metaId }));
+      const json = JSON.parse(await file.text());
+      const items = Array.isArray(json.items) ? json.items : [];
+      if (items.length === 0) { setMsg('❌ Arquivo sem "items".'); e.target.value = ''; return; }
+
+      // separa aportes (total === 0 && paid > 0) de fornecedores reais
+      const aportes = items.filter((i) => Number(i.total) === 0 && Number(i.paid) > 0);
+      const reais   = items.filter((i) => !(Number(i.total) === 0 && Number(i.paid) > 0));
+      const somaAportes = aportes.reduce((s, i) => s + (Number(i.paid) || 0), 0);
+
+      let preview = `Vou importar:\n• ${reais.length} fornecedores`;
+      if (somaAportes > 0) preview += `\n• ${formatarBRL(somaAportes)} de aportes → vai pro "guardado" do cofre`;
+      if (fornecedores.length > 0) preview += `\n\n⚠ Você já tem ${fornecedores.length} fornecedor(es) — vou ADICIONAR (não substitui). Apague duplicados depois se precisar.`;
+      preview += `\n\nContinuar?`;
+      if (!window.confirm(preview)) { e.target.value = ''; return; }
+
+      setImportando(true);
+      try {
+        for (const i of reais) {
+          await forn.adicionar(novoFornecedor({
+            metaId,
+            nome: i.name || '',
+            categoria: i.category || '',
+            valorTotal: Number(i.total) || 0,
+            valorPago: Number(i.paid) || 0,
+          }));
+        }
+        if (somaAportes > 0) await updGuardado(somaAportes);
+        setMsg(`✅ ${reais.length} fornecedor(es) importados${somaAportes > 0 ? ` + ${formatarBRL(somaAportes)} no guardado` : ''}.`);
+      } finally {
+        setImportando(false);
+        e.target.value = '';
       }
-    } finally {
-      setCarregando(false);
+    } catch (err) {
+      setMsg('❌ JSON inválido. Esperado: { items: [{ name, category, total, paid }, ...] }');
+      e.target.value = '';
     }
   }
 
@@ -120,18 +152,15 @@ function SecaoFornecedores({ forn, fornecedores, metaId, cofreNome }) {
         </Card>
       )}
 
-      {podeCarregarPadrao && (
-        <Card className="mb-3 text-center space-y-2 border-accent/40">
-          <p className="text-sm text-cream">🪄 Carregar a lista padrão do casamento?</p>
-          <p className="text-muted text-xs">Cria os 21 itens (DJ, comida, bebidas, fotógrafo, decoração, igreja, etc.) com os valores e pagamentos do seu controle atual.</p>
-          <button onClick={carregarPadrao} disabled={carregando} className="w-full bg-accent text-bg font-semibold rounded-xl py-2.5 text-sm disabled:opacity-50">
-            {carregando ? 'Cadastrando...' : 'Carregar lista padrão'}
-          </button>
-        </Card>
-      )}
+      {/* Import JSON do planner (formato: { items: [{ name, category, total, paid }] }) */}
+      <label className="block w-full text-center bg-surface-2 border border-line rounded-xl py-2.5 text-sm cursor-pointer hover:border-accent transition mb-2">
+        {importando ? 'Importando...' : '📥 Importar JSON (formato planner)'}
+        <input type="file" accept=".json,application/json" className="hidden" onChange={importarJson} disabled={importando} />
+      </label>
+      {msg && <p className="text-xs text-muted px-1 mb-2">{msg}</p>}
 
-      {fornecedores.length === 0 && !podeCarregarPadrao ? (
-        <p className="text-muted text-sm px-1">Nenhum fornecedor ainda. Adicione buffet, fotografia, decoração...</p>
+      {fornecedores.length === 0 ? (
+        <p className="text-muted text-sm px-1">Nenhum fornecedor ainda. Adicione manualmente ou importe seu JSON.</p>
       ) : (
         <div className="space-y-2">
           {fornecedores.map((f) => <FornecedorCard key={f.id} f={f} forn={forn} />)}
