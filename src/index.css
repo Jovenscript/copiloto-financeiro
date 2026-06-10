@@ -4,22 +4,23 @@
 @import "tailwindcss";
 
 /* ============================================================
-   TEMA — "financeiro editorial, quente e calmo"
-   Tokens no @theme (Tailwind v4). Use como bg-bg, text-cream,
-   text-accent, etc. Trocar a paleta inteira = mexer aqui.
+   TEMA — "neon noir / synthwave"
+   Roxo neon sobre preto-violeta. Aqua = guardado/no caminho,
+   rosa-neon = estouro. Serifa Fraunces nos números = assinatura.
+   Trocar a paleta inteira = mexer SÓ aqui.
    ============================================================ */
 @theme {
-  --color-bg:        #14110e;  /* espresso quase-preto, quente */
-  --color-surface:   #1e1a16;  /* card */
-  --color-surface-2: #272019;  /* card elevado / input */
-  --color-line:      #352c22;  /* bordas */
+  --color-bg:        #0b0710;  /* preto quase-violeta */
+  --color-surface:   #150e1f;  /* card */
+  --color-surface-2: #1e1430;  /* card elevado / input */
+  --color-line:      #2c1f45;  /* bordas */
 
-  --color-cream:     #f3ede3;  /* texto principal */
-  --color-muted:     #a39a8b;  /* texto secundário */
+  --color-cream:     #ede6f5;  /* texto principal (off-white frio) */
+  --color-muted:     #9a8cb5;  /* texto secundário */
 
-  --color-accent:    #e0a458;  /* mel — a marca */
-  --color-positive:  #5fb98c;  /* sobra boa / no caminho */
-  --color-negative:  #d2694a;  /* estouro / atrasado */
+  --color-accent:    #b57bff;  /* roxo neon — a marca */
+  --color-positive:  #34e5c4;  /* aqua — sobra boa / no caminho */
+  --color-negative:  #ff5c7a;  /* rosa-neon — estouro / atrasado */
 
   --font-display: "Fraunces", Georgia, serif;
   --font-body:    "Hanken Grotesk", system-ui, sans-serif;
@@ -35,18 +36,23 @@ body {
   background: var(--color-bg);
   color: var(--color-cream);
   font-family: var(--font-body);
-  /* atmosfera: leve brilho quente no topo, não cor chapada */
+  /* atmosfera: brilho neon roxo no topo, não cor chapada */
   background-image:
-    radial-gradient(120% 60% at 50% -10%, rgba(224,164,88,0.07), transparent 60%);
+    radial-gradient(120% 60% at 50% -10%, rgba(181,123,255,0.12), transparent 60%);
   background-attachment: fixed;
 }
 
 /* Números e títulos respiram melhor na serifa */
 .font-num { font-family: var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 
+/* Brilho neon pro número-herói */
+.glow { text-shadow: 0 0 30px currentColor; }
+
 /* Scrollbar discreta */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 8px; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Inputs herdam a fonte */
 input, button, select, textarea { font-family: inherit; }
