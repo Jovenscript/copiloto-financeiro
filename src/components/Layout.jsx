@@ -53,8 +53,9 @@ export default function Layout({ children }) {
           </div>
         </header>
 
-        {/* MAIN — o ÚNICO que rola */}
-        <main className="flex-1 overflow-y-auto">
+        {/* MAIN — o ÚNICO que rola. min-h-0 é obrigatório: sem ele o item
+            flex não encolhe e o overflow não rola (a nav some cortada). */}
+        <main className="flex-1 min-h-0 overflow-y-auto">
           <div className="px-5 md:px-8 pt-4 pb-28 md:pb-12 max-w-5xl mx-auto w-full">
             <AnimatePresence mode="wait">
               <motion.div key={loc.pathname}
