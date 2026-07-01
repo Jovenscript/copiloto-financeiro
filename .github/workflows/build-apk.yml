@@ -1,0 +1,62 @@
+name: Build APK
+
+# Roda sozinho toda vez que você sobe algo em main (upload pelo GitHub web UI
+# também conta como push). Também dá pra disparar manualmente na aba Actions.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build do app web (dist/)
+        run: npm run build
+
+      - name: Java 21 (necessário pro Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Garantir SDK Android
+        uses: android-actions/setup-android@v3
+
+      # IMPORTANTE: só gera a pasta android/ do zero se ela NÃO existir no repo.
+      # Se você já tem uma (customizada, ex. pelo Gemini), o workflow NUNCA
+      # sobrescreve — só sincroniza os assets web dentro dela.
+      - name: Garantir projeto Android
+        run: |
+          if [ ! -d "android" ]; then
+            echo "Pasta android/ não existe — gerando pela primeira vez"
+            npx cap add android
+          else
+            echo "Pasta android/ já existe — não mexo na estrutura nativa"
+          fi
+          npx cap sync android
+
+      - name: Build APK debug (instalável direto no celular)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: copiloto-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
