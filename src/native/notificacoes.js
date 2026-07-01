@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { recorrentesPendentes, vencimentoEfetivo, chaveMes } from '../core/calculos';
+import { recorrentesPendentes, parcelasPendentesNoMes, vencimentoEfetivo, dataVencimento, chaveMes } from '../core/calculos';
 
 const nativo = () => Capacitor.isNativePlatform();
 
@@ -28,13 +28,13 @@ export async function vibrar(forte = false) {
 }
 
 // Agenda notificações locais (só nativo). No web, usamos o sino + Google Agenda.
-export async function agendarLembretes({ recorrentes = [], compromissos = [], ym = chaveMes() }) {
+export async function agendarLembretes({ recorrentes = [], parcelamentos = [], compromissos = [], ym = chaveMes() }) {
   if (!nativo()) return;
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications');
     await LocalNotifications.requestPermissions();
 
-    // limpa as que já tínhamos agendado
+    // limpa as que já tínhamos agendado (evita duplicar quando os dados mudam)
     const pend = await LocalNotifications.getPending();
     if (pend.notifications?.length) {
       await LocalNotifications.cancel({ notifications: pend.notifications.map((n) => ({ id: n.id })) });
@@ -44,15 +44,45 @@ export async function agendarLembretes({ recorrentes = [], compromissos = [], ym
     const notifs = [];
     let id = 1;
 
-    // CONTAS — escalonamento no dia do vencimento (09h e 18h)
-    recorrentesPendentes(recorrentes, ym).forEach((r) => {
-      const data = vencimentoEfetivo(r, ym);
+    // CONTAS (recorrentes) + PARCELAMENTOS DO CARTÃO — mesma régua de aviso pros dois.
+    // Só entra aqui quem AINDA NÃO foi marcado como pago (recorrentesPendentes/parcelasPendentesNoMes
+    // já filtram isso) — então quando você marca "pago", esse efeito roda de novo e cancela o aviso sozinho.
+    const contas = [
+      ...recorrentesPendentes(recorrentes, ym).map((r) => ({
+        id: `r${r.id}`, descricao: r.descricao, valor: Number(r.valor) || 0, data: vencimentoEfetivo(r, ym),
+      })),
+      ...parcelasPendentesNoMes(parcelamentos, ym).map((p) => ({
+        id: `p${p.id}`,
+        descricao: `${p.descricao} (${(Number(p.parcelasPagas) || 0) + 1}/${p.totalParcelas})`,
+        valor: Number(p.valorParcela) || 0, data: dataVencimento(p.diaVencimento, ym),
+      })),
+    ];
+
+    contas.forEach((c) => {
+      const venc = new Date(c.data + 'T00:00:00');
+      const dia = venc.getDate();
+      const valorFmt = c.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      // D-2, 09h — primeiro aviso, sem pressão
+      const d2 = new Date(venc); d2.setDate(d2.getDate() - 2); d2.setHours(9, 0, 0, 0);
+      if (d2 > agora) notifs.push({
+        id: id++, title: `🔔 ${c.descricao} vence em 2 dias`,
+        body: `${valorFmt} — dia ${dia}`, schedule: { at: d2 }, smallIcon: 'ic_stat_icon',
+      });
+
+      // D-1, 09h — véspera
+      const d1 = new Date(venc); d1.setDate(d1.getDate() - 1); d1.setHours(9, 0, 0, 0);
+      if (d1 > agora) notifs.push({
+        id: id++, title: `⚠️ ${c.descricao} vence amanhã`,
+        body: `${valorFmt} — dia ${dia}`, schedule: { at: d1 }, smallIcon: 'ic_stat_icon',
+      });
+
+      // Dia do vencimento, 09h e 18h — escalonado, só dispara se ainda não foi pago
       [9, 18].forEach((h) => {
-        const at = new Date(data + 'T00:00:00'); at.setHours(h, 0, 0, 0);
-        if (at > agora) notifs.push({
-          id: id++, title: `💰 ${r.descricao} vence hoje`,
-          body: `R$ ${Number(r.valor).toFixed(2)} — marque como pago no app`,
-          schedule: { at }, smallIcon: 'ic_stat_icon',
+        const d0 = new Date(venc); d0.setHours(h, 0, 0, 0);
+        if (d0 > agora) notifs.push({
+          id: id++, title: `🔴 ${c.descricao} vence hoje`,
+          body: `${valorFmt} — já pagou? Marque no app`, schedule: { at: d0 }, smallIcon: 'ic_stat_icon',
         });
       });
     });
