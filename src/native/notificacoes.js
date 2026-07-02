@@ -27,12 +27,49 @@ export async function vibrar(forte = false) {
   } catch (e) {}
 }
 
+// Cria (ou já existe) o canal dedicado de vencimentos, com o som customizado.
+// Precisa rodar antes de agendar qualquer notificação nesse canal.
+async function garantirCanal() {
+  const { LocalNotifications } = await import('@capacitor/local-notifications');
+  await LocalNotifications.createChannel({
+    id: 'vencimentos',
+    name: 'Vencimentos e contas',
+    description: 'Avisos de contas e parcelas perto do vencimento',
+    importance: 5, // máxima — aparece com som e pop-up
+    sound: 'vencimento.ogg',
+    visibility: 1,
+    vibration: true,
+  });
+}
+
+// Dispara 1 notificação imediata, pra testar sem esperar dias por um vencimento real.
+export async function testarNotificacao() {
+  if (!nativo()) return false;
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications');
+    await LocalNotifications.requestPermissions();
+    await garantirCanal();
+    await LocalNotifications.schedule({
+      notifications: [{
+        id: 999999,
+        title: '🔔 Teste — Copiloto Financeiro',
+        body: 'Se você tá vendo (e ouvindo) isso, tá tudo funcionando.',
+        channelId: 'vencimentos',
+        smallIcon: 'ic_stat_icon',
+        schedule: { at: new Date(Date.now() + 2000) }, // dispara em 2s
+      }],
+    });
+    return true;
+  } catch (e) { return false; }
+}
+
 // Agenda notificações locais (só nativo). No web, usamos o sino + Google Agenda.
 export async function agendarLembretes({ recorrentes = [], parcelamentos = [], compromissos = [], ym = chaveMes() }) {
   if (!nativo()) return;
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications');
     await LocalNotifications.requestPermissions();
+    await garantirCanal();
 
     // limpa as que já tínhamos agendado (evita duplicar quando os dados mudam)
     const pend = await LocalNotifications.getPending();
@@ -67,14 +104,14 @@ export async function agendarLembretes({ recorrentes = [], parcelamentos = [], c
       const d2 = new Date(venc); d2.setDate(d2.getDate() - 2); d2.setHours(9, 0, 0, 0);
       if (d2 > agora) notifs.push({
         id: id++, title: `🔔 ${c.descricao} vence em 2 dias`,
-        body: `${valorFmt} — dia ${dia}`, schedule: { at: d2 }, smallIcon: 'ic_stat_icon',
+        body: `${valorFmt} — dia ${dia}`, schedule: { at: d2 }, smallIcon: 'ic_stat_icon', channelId: 'vencimentos',
       });
 
       // D-1, 09h — véspera
       const d1 = new Date(venc); d1.setDate(d1.getDate() - 1); d1.setHours(9, 0, 0, 0);
       if (d1 > agora) notifs.push({
         id: id++, title: `⚠️ ${c.descricao} vence amanhã`,
-        body: `${valorFmt} — dia ${dia}`, schedule: { at: d1 }, smallIcon: 'ic_stat_icon',
+        body: `${valorFmt} — dia ${dia}`, schedule: { at: d1 }, smallIcon: 'ic_stat_icon', channelId: 'vencimentos',
       });
 
       // Dia do vencimento, 09h e 18h — escalonado, só dispara se ainda não foi pago
@@ -82,7 +119,7 @@ export async function agendarLembretes({ recorrentes = [], parcelamentos = [], c
         const d0 = new Date(venc); d0.setHours(h, 0, 0, 0);
         if (d0 > agora) notifs.push({
           id: id++, title: `🔴 ${c.descricao} vence hoje`,
-          body: `${valorFmt} — já pagou? Marque no app`, schedule: { at: d0 }, smallIcon: 'ic_stat_icon',
+          body: `${valorFmt} — já pagou? Marque no app`, schedule: { at: d0 }, smallIcon: 'ic_stat_icon', channelId: 'vencimentos',
         });
       });
     });
