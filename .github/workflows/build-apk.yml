@@ -48,6 +48,17 @@ jobs:
           fi
           npx cap sync android
 
+      # Gera ícone + splash screen em todos os tamanhos a partir de resources/icon.png
+      - name: Gerar ícone e splash (todos os tamanhos)
+        run: npx @capacitor/assets generate --android
+
+      # Injeta arquivos nativos customizados (som de notificação) que
+      # não fazem parte do `cap sync`/`assets generate` — sync só mexe em web/ícone.
+      - name: Injetar recursos nativos (som)
+        run: |
+          mkdir -p android/app/src/main/res/raw
+          cp -f native-assets/android/res/raw/*.ogg android/app/src/main/res/raw/ 2>/dev/null || true
+
       - name: Build APK debug (instalável direto no celular)
         working-directory: android
         run: |
