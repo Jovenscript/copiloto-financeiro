@@ -9,6 +9,7 @@ import Card from '../components/ui/Card';
 import Backup from '../components/Backup';
 import Extrato from '../components/Extrato';
 import { formatarBRL } from '../components/ui/Money';
+import { testarNotificacao } from '../native/notificacoes';
 
 export default function Perfil() {
   const { user, sair } = useAuth();
@@ -17,6 +18,7 @@ export default function Perfil() {
   const { parcelamentos } = useParcelamentos();
   const { cofres } = useCofres();
   const [maisOpcoes, setMaisOpcoes] = useState(false);
+  const [testeMsg, setTesteMsg] = useState('');
   const ym = chaveMes();
 
   const pan = panoramaMes({ lancs: lancamentos, recorrentes, parcelamentos, cofres, ym });
@@ -61,6 +63,20 @@ export default function Perfil() {
         <p className="text-muted text-xs mb-1">Conectado como</p>
         <p className="font-num text-lg break-all">{user?.email}</p>
       </Card>
+
+      {/* TESTAR NOTIFICAÇÃO — dispara na hora, sem esperar vencimento real */}
+      <button
+        onClick={async () => {
+          setTesteMsg('Enviando...');
+          const ok = await testarNotificacao();
+          setTesteMsg(ok ? '✅ Enviada — olha a barra de notificação em 2s' : '⚠️ Só funciona no app instalado (não no navegador)');
+          setTimeout(() => setTesteMsg(''), 4000);
+        }}
+        className="w-full bg-accent/10 border border-accent/40 text-accent rounded-2xl py-3 hover:bg-accent/20 transition"
+      >
+        🔔 Testar notificação agora
+      </button>
+      {testeMsg && <p className="text-center text-sm text-muted -mt-2">{testeMsg}</p>}
 
       {/* MAIS OPÇÕES (backup, tour) */}
       <button onClick={() => setMaisOpcoes(!maisOpcoes)} className="w-full text-muted text-sm py-2">
