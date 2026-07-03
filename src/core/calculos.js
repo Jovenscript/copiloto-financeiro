@@ -81,6 +81,24 @@ export function vencimentosProximos({ recorrentes = [], parcelamentos = [], dias
   return itens.sort((a, b) => a.data.localeCompare(b.data));
 }
 
+// Contas já vencidas e ainda não pagas — mesma forma de vencimentosProximos, olhando pra trás.
+export function contasVencidas({ recorrentes = [], parcelamentos = [], hoje = new Date() }) {
+  const ym = chaveMes(hoje);
+  const h0 = stripTime(hoje);
+  const itens = [];
+  recorrentesPendentes(recorrentes, ym).forEach((r) => {
+    const data = vencimentoEfetivo(r, ym);
+    const dv = new Date(data + 'T12:00:00');
+    if (dv < h0) itens.push({ id: r.id, tipo: 'recorrente', descricao: r.descricao, valor: Number(r.valor) || 0, categoria: r.categoria, data });
+  });
+  parcelasPendentesNoMes(parcelamentos, ym).forEach((p) => {
+    const data = dataVencimento(p.diaVencimento, ym);
+    const dv = new Date(data + 'T12:00:00');
+    if (dv < h0) itens.push({ id: p.id, tipo: 'parcela', descricao: `${p.descricao} (${(Number(p.parcelasPagas) || 0) + 1}/${p.totalParcelas})`, valor: Number(p.valorParcela) || 0, categoria: p.categoria, data });
+  });
+  return itens.sort((a, b) => a.data.localeCompare(b.data));
+}
+
 // Pergunta 6: o que pago mês que vem
 export function projecaoProximoMes({ recorrentes = [], parcelamentos = [] }) {
   const rec = totalRecorrentes(recorrentes);
