@@ -1,31 +1,30 @@
-/* Fontes — Fraunces (display, números) + Hanken Grotesk (corpo).
-   @import de fontes precisa vir ANTES de tudo (regra do CSS). */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+/* Hanken Grotesk — única família, usada em tudo (títulos, números, corpo).
+   Nada de serifa decorativa: hierarquia vem de peso e tamanho, não de estilo. */
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 /* ============================================================
-   TEMA — "neon noir / synthwave"
-   Roxo neon sobre preto-violeta. Aqua = guardado/no caminho,
-   rosa-neon = estouro. Serifa Fraunces nos números = assinatura.
-   Trocar a paleta inteira = mexer SÓ aqui.
+   TEMA — "corporativo, sóbrio" (referência: Mercury, Qonto, Revolut)
+   Preto neutro, cinza-grafite, UM accent controlado (sem neon, sem glow).
+   Tokens no @theme (Tailwind v4): bg-bg, text-cream, text-accent, etc.
    ============================================================ */
 @theme {
-  --color-bg:        #0b0710;  /* preto quase-violeta */
-  --color-surface:   #150e1f;  /* card */
-  --color-surface-2: #1e1430;  /* card elevado / input */
-  --color-line:      #2c1f45;  /* bordas */
+  --color-bg:        #0a0a0b;  /* preto neutro — sem matiz colorido */
+  --color-surface:   #141416;  /* card */
+  --color-surface-2: #1c1d1f;  /* card elevado / input */
+  --color-line:      #2a2b2e;  /* bordas — finas, discretas */
 
-  --color-cream:     #ede6f5;  /* texto principal (off-white frio) */
-  --color-muted:     #9a8cb5;  /* texto secundário */
+  --color-cream:     #ededef;  /* texto principal */
+  --color-muted:     #8b8d93;  /* texto secundário */
 
-  --color-accent:    #b57bff;  /* roxo neon — a marca */
-  --color-positive:  #34e5c4;  /* aqua — sobra boa / no caminho */
-  --color-negative:  #ff5c7a;  /* rosa-neon — estouro / atrasado */
+  --color-accent:    #4c5fd6;  /* azul-índigo — a marca, usado com moderação */
+  --color-positive:  #2fae6b;  /* verde contido */
+  --color-negative:  #e5484d;  /* vermelho contido */
 
-  --font-display: "Fraunces", Georgia, serif;
+  --font-display: "Hanken Grotesk", system-ui, sans-serif;
   --font-body:    "Hanken Grotesk", system-ui, sans-serif;
 
-  --radius-card: 20px;
+  --radius-card: 14px;
 }
 
 /* Base */
@@ -36,17 +35,11 @@ body {
   background: var(--color-bg);
   color: var(--color-cream);
   font-family: var(--font-body);
-  /* atmosfera: brilho neon roxo no topo, não cor chapada */
-  background-image:
-    radial-gradient(120% 60% at 50% -10%, rgba(181,123,255,0.12), transparent 60%);
-  background-attachment: fixed;
+  /* sem gradiente atmosférico — fundo chapado, mais sério */
 }
 
-/* Números e títulos respiram melhor na serifa */
-.font-num { font-family: var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-
-/* Brilho neon pro número-herói */
-.glow { text-shadow: 0 0 30px currentColor; }
+/* Números: peso + tabular, sem serifa, sem glow */
+.font-num { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -0.01em; }
 
 /* Scrollbar discreta */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -56,3 +49,12 @@ body {
 
 /* Inputs herdam a fonte */
 input, button, select, textarea { font-family: inherit; }
+
+/* Impressão — usado pelo botão "Baixar PDF" do extrato (window.print).
+   Esconde nav/header/FAB, deixa só o conteúdo do extrato em branco e preto. */
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  nav, header, .no-print { display: none !important; }
+  .print-area { color: #000 !important; }
+  .print-area * { color: #000 !important; background: transparent !important; border-color: #ccc !important; }
+}

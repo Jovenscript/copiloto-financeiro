@@ -36,17 +36,16 @@ export default function Inicio() {
 
   return (
     <div className="space-y-4">
-      <Card className="relative overflow-hidden bg-gradient-to-br from-surface-2 to-surface py-8">
-        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-accent/10 blur-2xl" />
-        <p className="text-muted text-xs uppercase tracking-[0.2em] mb-1">Disponível este mês</p>
-        <div className={`font-num glow text-5xl md:text-6xl font-semibold tracking-tight ${positivo ? 'text-positive' : 'text-negative'}`}>
+      <Card className="py-8">
+        <p className="text-muted text-xs uppercase tracking-[0.16em] mb-2">Disponível este mês</p>
+        <div className={`font-num text-5xl md:text-6xl tracking-tight ${positivo ? 'text-cream' : 'text-negative'}`}>
           {formatarBRL(pan.disponivel)}
         </div>
-        <div className="mt-4 h-1.5 rounded-full bg-line overflow-hidden">
-          <motion.div initial={{ width: 0 }} animate={{ width: `${pctGasto}%` }} transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="h-full rounded-full bg-gradient-to-r from-accent/60 to-accent" />
+        <div className="mt-4 h-1 rounded-full bg-line overflow-hidden">
+          <motion.div initial={{ width: 0 }} animate={{ width: `${pctGasto}%` }} transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="h-full rounded-full bg-accent" />
         </div>
-        <p className="text-muted text-xs mt-1.5">{formatarBRL(pan.despesas + pan.comprometido)} comprometido de {formatarBRL(pan.receitas)}</p>
+        <p className="text-muted text-xs mt-2">{formatarBRL(pan.despesas + pan.comprometido)} comprometido de {formatarBRL(pan.receitas)}</p>
       </Card>
 
       <BannerAtencao vencidas={vencidas} proximas={proximas} onClick={() => nav('/financas')} />
@@ -72,7 +71,7 @@ function BannerAtencao({ vencidas, proximas, onClick }) {
   if (vencidas.length > 0) {
     const total = vencidas.reduce((s, v) => s + v.valor, 0);
     return (
-      <button onClick={onClick} className="w-full flex items-center gap-3 bg-negative/10 border border-negative/30 rounded-2xl px-4 py-3 text-left">
+      <button onClick={onClick} className="w-full flex items-center gap-3 bg-negative/10 border border-negative/30 rounded-xl px-4 py-3 text-left">
         <AlertCircle size={20} className="text-negative shrink-0" />
         <span className="text-sm text-cream flex-1">
           <strong className="text-negative">{vencidas.length} {vencidas.length === 1 ? 'conta vencida' : 'contas vencidas'}</strong> · {formatarBRL(total)}
@@ -86,7 +85,7 @@ function BannerAtencao({ vencidas, proximas, onClick }) {
     const dias = Math.round((new Date(proxima.data + 'T12:00:00') - new Date()) / 86400000);
     const urgente = dias <= 1;
     return (
-      <button onClick={onClick} className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left border ${urgente ? 'bg-negative/10 border-negative/30' : 'bg-surface border-line'}`}>
+      <button onClick={onClick} className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left border ${urgente ? 'bg-negative/10 border-negative/30' : 'bg-surface border-line'}`}>
         <Clock size={20} className={urgente ? 'text-negative shrink-0' : 'text-accent shrink-0'} />
         <span className="text-sm text-cream flex-1">
           <strong>{proxima.descricao}</strong> {dias <= 0 ? 'vence hoje' : dias === 1 ? 'vence amanhã' : `vence em ${dias} dias`} · {formatarBRL(proxima.valor)}
@@ -96,7 +95,7 @@ function BannerAtencao({ vencidas, proximas, onClick }) {
     );
   }
   return (
-    <div className="w-full flex items-center gap-3 bg-positive/10 border border-positive/25 rounded-2xl px-4 py-3">
+    <div className="w-full flex items-center gap-3 bg-positive/10 border border-positive/25 rounded-xl px-4 py-3">
       <CheckCircle2 size={20} className="text-positive shrink-0" />
       <span className="text-sm text-cream">Tudo em dia. Nada vencendo nos próximos 10 dias. 🎉</span>
     </div>
@@ -122,9 +121,9 @@ function MetaDestaque({ cofre, onClick }) {
   const { pct } = progressoCofre(cofre);
   const meses = mesesAte(cofre.prazo);
   return (
-    <button onClick={onClick} className="w-full text-left rounded-2xl p-4 border border-accent/30 bg-gradient-to-br from-surface-2 to-surface">
+    <button onClick={onClick} className="w-full text-left rounded-xl p-4 border border-line bg-surface">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-accent text-xs flex items-center gap-1.5"><Heart size={13} /> {cofre.nome}</p>
+        <p className="text-muted text-xs flex items-center gap-1.5 uppercase tracking-wide"><Heart size={13} /> {cofre.nome}</p>
         <ChevronRight size={15} className="text-muted" />
       </div>
       <div className="flex items-end justify-between mb-1.5">
@@ -141,10 +140,10 @@ function MetaDestaque({ cofre, onClick }) {
 function Esqueleto() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-40 bg-surface rounded-2xl" />
-      <div className="h-14 bg-surface rounded-2xl" />
-      <div className="h-40 bg-surface rounded-2xl" />
-      <div className="h-24 bg-surface rounded-2xl" />
+      <div className="h-40 bg-surface rounded-xl" />
+      <div className="h-14 bg-surface rounded-xl" />
+      <div className="h-40 bg-surface rounded-xl" />
+      <div className="h-24 bg-surface rounded-xl" />
     </div>
   );
 }

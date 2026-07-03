@@ -28,25 +28,41 @@ export default function Extrato() {
     a.click(); URL.revokeObjectURL(url);
   }
 
+  // "Baixar PDF": usa a função de impressão do navegador. Não precisa de
+  // nenhuma biblioteca nova — no diálogo que abre, escolher "Salvar como PDF".
+  // O CSS @media print (em index.css) esconde nav/header e deixa só o extrato.
+  function baixarPDF() {
+    window.print();
+  }
+
   return (
-    <Card className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="font-num text-xl font-semibold">📄 Extrato</p>
-        <button onClick={baixarCSV} className="text-accent text-sm">⬇️ baixar CSV</button>
+    <Card className="space-y-4 print-area">
+      <div className="flex items-center justify-between no-print">
+        <p className="font-num text-xl font-semibold">Extrato</p>
+        <div className="flex items-center gap-3">
+          <button onClick={baixarPDF} className="text-accent text-sm">Baixar PDF</button>
+          <button onClick={baixarCSV} className="text-muted text-sm">CSV</button>
+        </div>
+      </div>
+
+      {/* Cabeçalho só visível na impressão/PDF */}
+      <div className="hidden print:block mb-2">
+        <p className="text-lg font-bold">Extrato — Copiloto Financeiro</p>
+        <p className="text-sm text-muted">Últimos {dias} dias · gerado em {new Date().toLocaleDateString('pt-BR')}</p>
       </div>
 
       {/* Filtros */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap no-print">
         {[30, 60, 90].map((d) => (
           <button key={d} onClick={() => setDias(d)}
-            className={`px-3 py-1.5 rounded-lg text-xs transition ${dias === d ? 'bg-accent text-bg' : 'bg-surface-2 text-muted'}`}>
+            className={`px-3 py-1.5 rounded-lg text-xs transition ${dias === d ? 'bg-accent text-cream' : 'bg-surface-2 text-muted'}`}>
             {d} dias
           </button>
         ))}
         <span className="w-px bg-line mx-1" />
         {[['todos', 'Tudo'], ['receita', 'Entradas'], ['despesa', 'Saídas']].map(([id, label]) => (
           <button key={id} onClick={() => setFiltro(id)}
-            className={`px-3 py-1.5 rounded-lg text-xs transition ${filtro === id ? 'bg-accent text-bg' : 'bg-surface-2 text-muted'}`}>
+            className={`px-3 py-1.5 rounded-lg text-xs transition ${filtro === id ? 'bg-accent text-cream' : 'bg-surface-2 text-muted'}`}>
             {label}
           </button>
         ))}
@@ -54,11 +70,11 @@ export default function Extrato() {
 
       {/* Totais do período */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-positive/10 rounded-xl px-3 py-2">
+        <div className="bg-positive/10 rounded-lg px-3 py-2">
           <p className="text-muted text-[0.65rem] uppercase">Entrou</p>
           <p className="font-num text-lg text-positive">{formatarBRL(totalEntrou)}</p>
         </div>
-        <div className="bg-negative/10 rounded-xl px-3 py-2">
+        <div className="bg-negative/10 rounded-lg px-3 py-2">
           <p className="text-muted text-[0.65rem] uppercase">Saiu</p>
           <p className="font-num text-lg text-negative">{formatarBRL(totalSaiu)}</p>
         </div>
@@ -66,9 +82,9 @@ export default function Extrato() {
 
       {/* Lista */}
       {itens.length === 0 ? (
-        <p className="text-muted text-sm text-center py-4">Sem movimentação no período.</p>
+        <p className="text-muted text-sm text-center py-4">Sem movimentação no período. Lance algo em "+" pra ver aqui.</p>
       ) : (
-        <div className="space-y-1.5 max-h-96 overflow-y-auto">
+        <div className="space-y-1.5 max-h-96 overflow-y-auto print:max-h-none print:overflow-visible">
           {itens.map((l) => {
             const info = infoCategoria(l.categoria);
             const ehReceita = l.tipo === 'receita';
