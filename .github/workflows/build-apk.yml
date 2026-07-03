@@ -54,10 +54,14 @@ jobs:
 
       # Injeta arquivos nativos customizados (som de notificação) que
       # não fazem parte do `cap sync`/`assets generate` — sync só mexe em web/ícone.
-      - name: Injetar recursos nativos (som)
+      - name: Injetar recursos nativos (som + ícone de status bar)
         run: |
           mkdir -p android/app/src/main/res/raw
           cp -f native-assets/android/res/raw/*.ogg android/app/src/main/res/raw/ 2>/dev/null || true
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p "android/app/src/main/res/drawable-$d"
+            cp -f "native-assets/android/res/drawable-$d/ic_stat_icon.png" "android/app/src/main/res/drawable-$d/" 2>/dev/null || true
+          done
 
       - name: Build APK debug (instalável direto no celular)
         working-directory: android
