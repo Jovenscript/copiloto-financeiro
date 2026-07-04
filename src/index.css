@@ -1,25 +1,22 @@
-/* Hanken Grotesk — única família, usada em tudo (títulos, números, corpo).
-   Nada de serifa decorativa: hierarquia vem de peso e tamanho, não de estilo. */
 @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 /* ============================================================
-   TEMA — "corporativo, sóbrio" (referência: Mercury, Qonto, Revolut)
-   Preto neutro, cinza-grafite, UM accent controlado (sem neon, sem glow).
-   Tokens no @theme (Tailwind v4): bg-bg, text-cream, text-accent, etc.
+   TEMA — CLARO, corporativo (referência: ViaCredi/Ailos, Mercury, Qonto)
+   Fundo cinza muito claro, cards brancos, UM accent azul, sem glow/gradiente.
    ============================================================ */
 @theme {
-  --color-bg:        #0a0a0b;  /* preto neutro — sem matiz colorido */
-  --color-surface:   #141416;  /* card */
-  --color-surface-2: #1c1d1f;  /* card elevado / input */
-  --color-line:      #2a2b2e;  /* bordas — finas, discretas */
+  --color-bg:        #f6f7f8;  /* fundo — cinza quase branco, não estoura o olho */
+  --color-surface:   #ffffff;  /* card — branco puro, contraste com o fundo */
+  --color-surface-2: #eef0f2;  /* input / superfície secundária */
+  --color-line:      #e3e5e9;  /* borda — bem discreta */
 
-  --color-cream:     #ededef;  /* texto principal */
-  --color-muted:     #8b8d93;  /* texto secundário */
+  --color-cream:     #15171c;  /* texto principal (nome mantido por compatibilidade, agora é quase-preto) */
+  --color-muted:     #6b6e76;  /* texto secundário */
 
-  --color-accent:    #4c5fd6;  /* azul-índigo — a marca, usado com moderação */
-  --color-positive:  #2fae6b;  /* verde contido */
-  --color-negative:  #e5484d;  /* vermelho contido */
+  --color-accent:    #3d4fd1;  /* azul — a marca, mesma cor do ícone do app */
+  --color-positive:  #1e9e5a;
+  --color-negative:  #d92d3b;
 
   --font-display: "Hanken Grotesk", system-ui, sans-serif;
   --font-body:    "Hanken Grotesk", system-ui, sans-serif;
@@ -27,7 +24,6 @@
   --radius-card: 14px;
 }
 
-/* Base */
 * { -webkit-tap-highlight-color: transparent; }
 html, body, #root { height: 100%; }
 body {
@@ -35,26 +31,22 @@ body {
   background: var(--color-bg);
   color: var(--color-cream);
   font-family: var(--font-body);
-  /* sem gradiente atmosférico — fundo chapado, mais sério */
 }
 
-/* Números: peso + tabular, sem serifa, sem glow */
 .font-num { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -0.01em; }
 
-/* Scrollbar discreta */
+/* Cards em tema claro pedem sombra suave em vez de borda pesada — mais "flutuante" */
+.shadow-card { box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 1px 8px rgba(20,20,30,0.04); }
+
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 8px; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Inputs herdam a fonte */
 input, button, select, textarea { font-family: inherit; }
 
-/* Impressão — usado pelo botão "Baixar PDF" do extrato (window.print).
-   Esconde nav/header/FAB, deixa só o conteúdo do extrato em branco e preto. */
 @media print {
   body { background: #fff !important; color: #000 !important; }
   nav, header, .no-print { display: none !important; }
-  .print-area { color: #000 !important; }
   .print-area * { color: #000 !important; background: transparent !important; border-color: #ccc !important; }
 }

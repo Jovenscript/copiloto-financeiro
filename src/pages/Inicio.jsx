@@ -9,11 +9,11 @@ import { chaveMes, panoramaMes, vencimentosProximos, contasVencidas, progressoCo
 import Card from '../components/ui/Card';
 import { formatarBRL } from '../components/ui/Money';
 
-// Regra de hierarquia desta tela (teste dos 3 segundos):
-// 1. Saldo disponível — a ÚNICA coisa gigante na tela.
-// 2. UM banner de atenção — o item mais urgente, e só ele. Sem competir com o saldo.
-// 3. Próximos pagamentos — lista curta (3 no máx), cor conta a história (vencida/hoje/depois).
-// 4. UMA meta em destaque — a mais próxima do prazo. As outras ficam a 1 toque, não na tela.
+// Hierarquia desta tela (teste dos 3 segundos):
+// 1. Saldo disponível — a única coisa grande.
+// 2. UM banner de atenção — o item mais urgente, nunca mais de um.
+// 3. Próximos pagamentos — lista curta, cor conta a história.
+// 4. UMA meta em destaque — a mais próxima do prazo.
 export default function Inicio() {
   const nav = useNavigate();
   const { lancamentos, carregando } = useLancamentos();
@@ -53,7 +53,7 @@ export default function Inicio() {
       {lista.length > 0 && (
         <Card className="space-y-1">
           <div className="flex items-center justify-between mb-2">
-            <p className="font-num text-lg font-semibold">Próximos pagamentos</p>
+            <p className="font-num text-lg text-cream">Próximos pagamentos</p>
             <button onClick={() => nav('/financas')} className="text-accent text-xs flex items-center gap-0.5">todos <ChevronRight size={13} /></button>
           </div>
           {lista.map((item, i) => (
@@ -71,7 +71,7 @@ function BannerAtencao({ vencidas, proximas, onClick }) {
   if (vencidas.length > 0) {
     const total = vencidas.reduce((s, v) => s + v.valor, 0);
     return (
-      <button onClick={onClick} className="w-full flex items-center gap-3 bg-negative/10 border border-negative/30 rounded-xl px-4 py-3 text-left">
+      <button onClick={onClick} className="w-full flex items-center gap-3 bg-negative/8 border border-negative/25 rounded-xl px-4 py-3 text-left">
         <AlertCircle size={20} className="text-negative shrink-0" />
         <span className="text-sm text-cream flex-1">
           <strong className="text-negative">{vencidas.length} {vencidas.length === 1 ? 'conta vencida' : 'contas vencidas'}</strong> · {formatarBRL(total)}
@@ -85,7 +85,7 @@ function BannerAtencao({ vencidas, proximas, onClick }) {
     const dias = Math.round((new Date(proxima.data + 'T12:00:00') - new Date()) / 86400000);
     const urgente = dias <= 1;
     return (
-      <button onClick={onClick} className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left border ${urgente ? 'bg-negative/10 border-negative/30' : 'bg-surface border-line'}`}>
+      <button onClick={onClick} className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left border ${urgente ? 'bg-negative/8 border-negative/25' : 'bg-surface border-line shadow-card'}`}>
         <Clock size={20} className={urgente ? 'text-negative shrink-0' : 'text-accent shrink-0'} />
         <span className="text-sm text-cream flex-1">
           <strong>{proxima.descricao}</strong> {dias <= 0 ? 'vence hoje' : dias === 1 ? 'vence amanhã' : `vence em ${dias} dias`} · {formatarBRL(proxima.valor)}
@@ -95,9 +95,9 @@ function BannerAtencao({ vencidas, proximas, onClick }) {
     );
   }
   return (
-    <div className="w-full flex items-center gap-3 bg-positive/10 border border-positive/25 rounded-xl px-4 py-3">
+    <div className="w-full flex items-center gap-3 bg-positive/8 border border-positive/25 rounded-xl px-4 py-3">
       <CheckCircle2 size={20} className="text-positive shrink-0" />
-      <span className="text-sm text-cream">Tudo em dia. Nada vencendo nos próximos 10 dias. 🎉</span>
+      <span className="text-sm text-cream">Tudo em dia. Nada vencendo nos próximos 10 dias.</span>
     </div>
   );
 }
@@ -107,7 +107,7 @@ function LinhaPagamento({ item }) {
   const cor = item.status === 'vencida' ? 'text-negative' : dias <= 1 ? 'text-negative' : 'text-muted';
   const legenda = item.status === 'vencida' ? `venceu há ${Math.abs(dias)}d` : dias <= 0 ? 'hoje' : dias === 1 ? 'amanhã' : `em ${dias}d`;
   return (
-    <div className="flex items-center justify-between py-2 border-t border-line/60 first:border-t-0 first:pt-0">
+    <div className="flex items-center justify-between py-2 border-t border-line first:border-t-0 first:pt-0">
       <div className="min-w-0">
         <p className="text-sm text-cream truncate">{item.descricao}</p>
         <p className={`text-[0.7rem] ${cor}`}>{legenda}</p>
@@ -121,16 +121,16 @@ function MetaDestaque({ cofre, onClick }) {
   const { pct } = progressoCofre(cofre);
   const meses = mesesAte(cofre.prazo);
   return (
-    <button onClick={onClick} className="w-full text-left rounded-xl p-4 border border-line bg-surface">
+    <button onClick={onClick} className="w-full text-left rounded-xl p-4 border border-line bg-surface shadow-card">
       <div className="flex items-center justify-between mb-2">
         <p className="text-muted text-xs flex items-center gap-1.5 uppercase tracking-wide"><Heart size={13} /> {cofre.nome}</p>
         <ChevronRight size={15} className="text-muted" />
       </div>
       <div className="flex items-end justify-between mb-1.5">
-        <span className="font-num text-xl font-semibold text-cream">{formatarBRL(cofre.guardado)}</span>
+        <span className="font-num text-xl text-cream">{formatarBRL(cofre.guardado)}</span>
         <span className="text-muted text-xs">{Math.round(pct)}% · {meses != null ? `${meses}m restantes` : `de ${formatarBRL(cofre.alvo)}`}</span>
       </div>
-      <div className="h-1.5 rounded-full bg-line overflow-hidden">
+      <div className="h-1 rounded-full bg-line overflow-hidden">
         <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
       </div>
     </button>
@@ -140,10 +140,10 @@ function MetaDestaque({ cofre, onClick }) {
 function Esqueleto() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-40 bg-surface rounded-xl" />
-      <div className="h-14 bg-surface rounded-xl" />
-      <div className="h-40 bg-surface rounded-xl" />
-      <div className="h-24 bg-surface rounded-xl" />
+      <div className="h-40 bg-surface-2 rounded-xl" />
+      <div className="h-14 bg-surface-2 rounded-xl" />
+      <div className="h-40 bg-surface-2 rounded-xl" />
+      <div className="h-24 bg-surface-2 rounded-xl" />
     </div>
   );
 }

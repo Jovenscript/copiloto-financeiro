@@ -3,7 +3,6 @@ import { recorrentesPendentes, parcelasPendentesNoMes, vencimentoEfetivo, dataVe
 
 const nativo = () => Capacitor.isNativePlatform();
 
-// Pede permissão (nativo: local notifications · web: Notification do navegador)
 export async function pedirPermissao() {
   try {
     if (nativo()) {
@@ -15,7 +14,6 @@ export async function pedirPermissao() {
   } catch (e) {}
 }
 
-// Vibração tátil (nativo: Haptics · web: navigator.vibrate)
 export async function vibrar(forte = false) {
   try {
     if (nativo()) {
@@ -27,22 +25,24 @@ export async function vibrar(forte = false) {
   } catch (e) {}
 }
 
-// Cria (ou já existe) o canal dedicado de vencimentos, com o som customizado.
-// Precisa rodar antes de agendar qualquer notificação nesse canal.
+// Canal dedicado, importância máxima + vibração ativada.
+// OBS: o plugin oficial do Capacitor não expõe um "padrão" de vibração customizado
+// (isso exigiria código nativo Kotlin, fora do que dá pra injetar por resource).
+// importance:5 + vibration:true já usa o padrão mais longo/insistente que o Android
+// permite via canal — é o máximo alcançável sem escrever plugin nativo próprio.
 async function garantirCanal() {
   const { LocalNotifications } = await import('@capacitor/local-notifications');
   await LocalNotifications.createChannel({
     id: 'vencimentos',
     name: 'Vencimentos e contas',
     description: 'Avisos de contas e parcelas perto do vencimento',
-    importance: 5, // máxima — aparece com som e pop-up
+    importance: 5,
     sound: 'vencimento.ogg',
     visibility: 1,
     vibration: true,
   });
 }
 
-// Dispara 1 notificação imediata, pra testar sem esperar dias por um vencimento real.
 export async function testarNotificacao() {
   if (!nativo()) return false;
   try {
@@ -53,17 +53,16 @@ export async function testarNotificacao() {
       notifications: [{
         id: 999999,
         title: '🔔 Teste — Copiloto Financeiro',
-        body: 'Se você tá vendo (e ouvindo) isso, tá tudo funcionando.',
+        body: 'Se você tá vendo (e ouvindo/sentindo) isso, tá tudo funcionando.',
         channelId: 'vencimentos',
         smallIcon: 'ic_stat_icon',
-        schedule: { at: new Date(Date.now() + 2000) }, // dispara em 2s
+        schedule: { at: new Date(Date.now() + 2000) },
       }],
     });
     return true;
   } catch (e) { return false; }
 }
 
-// Agenda notificações locais (só nativo). No web, usamos o sino + Google Agenda.
 export async function agendarLembretes({ recorrentes = [], parcelamentos = [], compromissos = [], ym = chaveMes() }) {
   if (!nativo()) return;
   try {
@@ -71,7 +70,6 @@ export async function agendarLembretes({ recorrentes = [], parcelamentos = [], c
     await LocalNotifications.requestPermissions();
     await garantirCanal();
 
-    // limpa as que já tínhamos agendado (evita duplicar quando os dados mudam)
     const pend = await LocalNotifications.getPending();
     if (pend.notifications?.length) {
       await LocalNotifications.cancel({ notifications: pend.notifications.map((n) => ({ id: n.id })) });
@@ -81,9 +79,6 @@ export async function agendarLembretes({ recorrentes = [], parcelamentos = [], c
     const notifs = [];
     let id = 1;
 
-    // CONTAS (recorrentes) + PARCELAMENTOS DO CARTÃO — mesma régua de aviso pros dois.
-    // Só entra aqui quem AINDA NÃO foi marcado como pago (recorrentesPendentes/parcelasPendentesNoMes
-    // já filtram isso) — então quando você marca "pago", esse efeito roda de novo e cancela o aviso sozinho.
     const contas = [
       ...recorrentesPendentes(recorrentes, ym).map((r) => ({
         id: `r${r.id}`, descricao: r.descricao, valor: Number(r.valor) || 0, data: vencimentoEfetivo(r, ym),
@@ -100,31 +95,18 @@ export async function agendarLembretes({ recorrentes = [], parcelamentos = [], c
       const dia = venc.getDate();
       const valorFmt = c.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-      // D-2, 09h — primeiro aviso, sem pressão
       const d2 = new Date(venc); d2.setDate(d2.getDate() - 2); d2.setHours(9, 0, 0, 0);
-      if (d2 > agora) notifs.push({
-        id: id++, title: `🔔 ${c.descricao} vence em 2 dias`,
-        body: `${valorFmt} — dia ${dia}`, schedule: { at: d2 }, smallIcon: 'ic_stat_icon', channelId: 'vencimentos',
-      });
+      if (d2 > agora) notifs.push({ id: id++, title: `🔔 ${c.descricao} vence em 2 dias`, body: `${valorFmt} — dia ${dia}`, schedule: { at: d2 }, smallIcon: 'ic_stat_icon', channelId: 'vencimentos' });
 
-      // D-1, 09h — véspera
       const d1 = new Date(venc); d1.setDate(d1.getDate() - 1); d1.setHours(9, 0, 0, 0);
-      if (d1 > agora) notifs.push({
-        id: id++, title: `⚠️ ${c.descricao} vence amanhã`,
-        body: `${valorFmt} — dia ${dia}`, schedule: { at: d1 }, smallIcon: 'ic_stat_icon', channelId: 'vencimentos',
-      });
+      if (d1 > agora) notifs.push({ id: id++, title: `⚠️ ${c.descricao} vence amanhã`, body: `${valorFmt} — dia ${dia}`, schedule: { at: d1 }, smallIcon: 'ic_stat_icon', channelId: 'vencimentos' });
 
-      // Dia do vencimento, 09h e 18h — escalonado, só dispara se ainda não foi pago
       [9, 18].forEach((h) => {
         const d0 = new Date(venc); d0.setHours(h, 0, 0, 0);
-        if (d0 > agora) notifs.push({
-          id: id++, title: `🔴 ${c.descricao} vence hoje`,
-          body: `${valorFmt} — já pagou? Marque no app`, schedule: { at: d0 }, smallIcon: 'ic_stat_icon', channelId: 'vencimentos',
-        });
+        if (d0 > agora) notifs.push({ id: id++, title: `🔴 ${c.descricao} vence hoje`, body: `${valorFmt} — já pagou? Marque no app`, schedule: { at: d0 }, smallIcon: 'ic_stat_icon', channelId: 'vencimentos' });
       });
     });
 
-    // COMPROMISSOS — véspera e no dia
     compromissos.forEach((c) => {
       if (!c.data) return;
       const noDia = new Date(c.data + 'T09:00:00');
@@ -138,12 +120,12 @@ export async function agendarLembretes({ recorrentes = [], parcelamentos = [], c
   } catch (e) {}
 }
 
-// Ajusta a status bar no nativo (tema escuro)
+// Status bar clara — ícones escuros, combina com o app agora claro.
 export async function ajustarStatusBar() {
   if (!nativo()) return;
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar');
-    await StatusBar.setStyle({ style: Style.Dark });
-    await StatusBar.setBackgroundColor({ color: '#14110e' });
+    await StatusBar.setStyle({ style: Style.Light });
+    await StatusBar.setBackgroundColor({ color: '#f6f7f8' });
   } catch (e) {}
 }
