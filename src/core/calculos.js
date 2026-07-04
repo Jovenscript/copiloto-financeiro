@@ -109,6 +109,57 @@ export function projecaoProximoMes({ recorrentes = [], parcelamentos = [] }) {
   return { recorrentes: rec, parcelas: parc, total: rec + parc };
 }
 
+// Projeta N meses à frente a partir dos dados reais (recorrentes + parcelamentos).
+// Recorrentes: sempre ativos (não têm fim). Parcelamentos: avançam 1 parcela por
+// mês a partir de parcelasPagas atual — saem da lista quando bate totalParcelas.
+// Isso é o que alimenta a tela de Projeção (24 meses) — sempre ao vivo, nunca
+// um arquivo estático que fica desatualizado quando você edita algo.
+export function projetarMeses({ recorrentes = [], parcelamentos = [], mesesAFrente = 24, ymInicio = chaveMes() }) {
+  const [anoI, mesI] = ymInicio.split('-').map(Number);
+  const meses = [];
+
+  for (let i = 0; i < mesesAFrente; i++) {
+    const idx = anoI * 12 + (mesI - 1) + i;
+    const ano = Math.floor(idx / 12);
+    const mes = (idx % 12) + 1;
+    const ym = `${ano}-${String(mes).padStart(2, '0')}`;
+    const label = new Date(ano, mes - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+    const itensRecorrentes = recorrentes
+      .filter((r) => r.ativo !== false)
+      .map((r) => ({ nome: r.descricao, valor: Number(r.valor) || 0, categoria: r.categoria, acabando: false }));
+
+    const itensParcelamentos = [];
+    parcelamentos.forEach((p) => {
+      const totalParc = Number(p.totalParcelas) || 0;
+      const pagasAgora = Number(p.parcelasPagas) || 0;
+      const nParcela = pagasAgora + i + 1; // parcela que estaria em aberto neste mês, assumindo 1 paga/mês
+      if (nParcela > totalParc) return; // já teria terminado
+      const restantes = totalParc - nParcela;
+      itensParcelamentos.push({
+        nome: `${p.descricao} (${nParcela}/${totalParc})`,
+        valor: Number(p.valorParcela) || 0,
+        categoria: p.categoria,
+        acabando: restantes <= 1, // termina esse mês ou no próximo
+      });
+    });
+
+    const totalRec = itensRecorrentes.reduce((s, x) => s + x.valor, 0);
+    const totalParc = itensParcelamentos.reduce((s, x) => s + x.valor, 0);
+
+    meses.push({
+      ym, label,
+      recorrentes: itensRecorrentes,
+      parcelamentos: itensParcelamentos,
+      totalRecorrentes: totalRec,
+      totalParcelamentos: totalParc,
+      total: totalRec + totalParc,
+      acabandoEmBreve: itensParcelamentos.filter((x) => x.acabando).map((x) => x.nome),
+    });
+  }
+  return meses;
+}
+
 // Panorama do mês — alimenta o dashboard inteiro (disponível x comprometido)
 export function panoramaMes({ lancs = [], recorrentes = [], parcelamentos = [], cofres = [], ym = chaveMes() }) {
   const { receitas, despesas } = totaisDoMes(lancs, ym);
