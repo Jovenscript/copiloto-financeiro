@@ -52,7 +52,7 @@ export async function testarNotificacao() {
     await LocalNotifications.schedule({
       notifications: [{
         id: 999999,
-        title: '🔔 Teste — Copiloto Financeiro',
+        title: '🔔 Teste — Savings Trick',
         body: 'Se você tá vendo (e ouvindo/sentindo) isso, tá tudo funcionando.',
         channelId: 'vencimentos',
         smallIcon: 'ic_stat_icon',

@@ -18,7 +18,7 @@ export function linkGoogleAgenda({ descricao, valor, diaVencimento }) {
   const fim = new Date(venc.getTime() + 30 * 60000);
 
   const text = encodeURIComponent(`💰 ${descricao} — ${brl(valor)}`);
-  const details = encodeURIComponent('Conta a pagar · lembrete do Copiloto Financeiro');
+  const details = encodeURIComponent('Conta a pagar · lembrete do Savings Trick');
   const dates = `${fmtData(venc)}/${fmtData(fim)}`;
   const recur = encodeURIComponent('RRULE:FREQ=MONTHLY'); // repete todo mês
 
@@ -41,6 +41,6 @@ export function linkGoogleAgendaEvento({ titulo, data, hora, nota }) {
     dates = `${y}${pad(m)}${pad(d)}/${nx.getFullYear()}${pad(nx.getMonth() + 1)}${pad(nx.getDate())}`;
   }
   const text = encodeURIComponent(titulo || 'Compromisso');
-  const details = encodeURIComponent(nota || 'Compromisso · Copiloto Financeiro');
+  const details = encodeURIComponent(nota || 'Compromisso · Savings Trick');
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
 }

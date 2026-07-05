@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const PASSOS = [
-  { icone: '👋', titulo: 'Bem-vindo ao Copiloto', txt: 'Seu assistente de finanças e rotina num lugar só. Bora num tour de 30 segundos.' },
+  { icone: '👋', titulo: 'Bem-vindo ao Savings Trick', txt: 'Seu assistente de finanças e rotina num lugar só. Bora num tour de 30 segundos.' },
   { icone: '🧭', titulo: '5 áreas, sem bagunça', txt: '🏠 Início: sua situação em segundos · 💰 Finanças: o dinheiro · 📅 Agenda: compromissos e contas · 🤖 IA: em breve · ⚙️ Perfil: você e backup.' },
   { icone: '🔴', titulo: 'Nunca mais esqueça uma conta', txt: 'Contas a vencer aparecem no topo e te cobram até você marcar Pago, Adiar ou Ignorar.' },
   { icone: '🚀', titulo: 'Pronto pra começar', txt: 'Dica: vá em Finanças → Lançar pra importar sua planilha ou registrar o primeiro gasto.' },

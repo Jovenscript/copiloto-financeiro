@@ -73,7 +73,7 @@ export default function Backup() {
       }
       setMsg(`✅ Importados ${total} itens.`);
     } catch (err) {
-      setMsg('❌ Arquivo inválido. É um backup .json do Copiloto?');
+      setMsg('❌ Arquivo inválido. É um backup .json do Savings Trick?');
     } finally {
       setImportando(false); e.target.value = '';
     }

@@ -39,8 +39,8 @@ export default function Layout({ children }) {
             </svg>
           </span>
           <div>
-            <p className="font-num text-base font-bold leading-none text-cream">Copiloto</p>
-            <p className="text-muted text-[0.65rem] mt-0.5">Financeiro</p>
+            <p className="font-num text-base font-bold leading-none text-cream">Savings Trick</p>
+            <p className="text-muted text-[0.65rem] mt-0.5">controle inteligente</p>
           </div>
         </div>
         <nav className="flex flex-col gap-0.5">

@@ -30,7 +30,7 @@ export default function Avisos() {
     const hoje = new Date().toISOString().slice(0, 10);
     try {
       if (localStorage.getItem('aviso_notificado') === hoje) return;
-      new Notification('Copiloto Financeiro', { body: `${altos[0].titulo} — ${altos[0].texto}` });
+      new Notification('Savings Trick', { body: `${altos[0].titulo} — ${altos[0].texto}` });
       localStorage.setItem('aviso_notificado', hoje);
     } catch (e) {}
   }, [avisos.length, permissao]);

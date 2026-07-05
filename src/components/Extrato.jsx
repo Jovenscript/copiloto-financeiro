@@ -47,7 +47,7 @@ export default function Extrato() {
 
       {/* Cabeçalho só visível na impressão/PDF */}
       <div className="hidden print:block mb-2">
-        <p className="text-lg font-bold">Extrato — Copiloto Financeiro</p>
+        <p className="text-lg font-bold">Extrato — Savings Trick</p>
         <p className="text-sm text-muted">Últimos {dias} dias · gerado em {new Date().toLocaleDateString('pt-BR')}</p>
       </div>
 
