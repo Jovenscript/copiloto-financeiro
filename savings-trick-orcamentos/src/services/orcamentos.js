@@ -1,0 +1,9 @@
+import { collection, addDoc, deleteDoc, updateDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../firebase';
+const colecao = (uid) => collection(db, 'users', uid, 'orcamentos');
+export function ouvirOrcamentos(uid, cb) {
+  return onSnapshot(query(colecao(uid), orderBy('criadoEm', 'asc')), (s) => cb(s.docs.map((d) => ({ id: d.id, ...d.data() }))));
+}
+export function adicionar(uid, o) { return addDoc(colecao(uid), o); }
+export function atualizar(uid, id, p) { return updateDoc(doc(db, 'users', uid, 'orcamentos', id), p); }
+export function remover(uid, id) { return deleteDoc(doc(db, 'users', uid, 'orcamentos', id)); }
