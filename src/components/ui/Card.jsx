@@ -1,9 +1,7 @@
-// Cartão base do tema. Tema claro usa sombra suave, não borda pesada.
+// Cartão base — branco com sombra suave (design "cockpit" aprovado).
 export default function Card({ children, className = '' }) {
   return (
-    <div
-      className={`bg-surface border border-line shadow-card rounded-[var(--radius-card)] p-5 ${className}`}
-    >
+    <div className={`bg-surface shadow-card rounded-[var(--radius-card)] p-5 ${className}`}>
       {children}
     </div>
   );

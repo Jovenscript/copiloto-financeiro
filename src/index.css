@@ -2,29 +2,32 @@
 @import "tailwindcss";
 
 /* ============================================================
-   TEMA — CLARO, corporativo (referência: ViaCredi/Ailos, Mercury, Qonto)
-   Fundo cinza muito claro, cards brancos, UM accent azul, sem glow/gradiente.
+   TEMA "COCKPIT" — aprovado no protótipo
+   Fundo claro · hero navy · cobalto de ação · âmbar de atenção
    ============================================================ */
 @theme {
-  --color-bg:        #f6f7f8;  /* fundo — cinza quase branco, não estoura o olho */
-  --color-surface:   #ffffff;  /* card — branco puro, contraste com o fundo */
-  --color-surface-2: #eef0f2;  /* input / superfície secundária */
-  --color-line:      #e3e5e9;  /* borda — bem discreta */
+  --color-bg:        #F2F4F8;
+  --color-surface:   #FFFFFF;
+  --color-surface-2: #E9EDF3;
+  --color-line:      #E5E8EE;
 
-  --color-cream:     #15171c;  /* texto principal (nome mantido por compatibilidade, agora é quase-preto) */
-  --color-muted:     #6b6e76;  /* texto secundário */
+  --color-cream:     #101826;  /* texto principal (nome legado, agora tinta escura) */
+  --color-muted:     #6C7686;
 
-  --color-accent:    #3d4fd1;  /* azul — a marca, mesma cor do ícone do app */
-  --color-positive:  #1e9e5a;
-  --color-negative:  #d92d3b;
+  --color-navy:      #0D1B2E;  /* hero / marca */
+  --color-navy-2:    #16283F;
+  --color-accent:    #2E5BFF;  /* cobalto — ação */
+  --color-amber:     #F6A723;  /* atenção */
+  --color-positive:  #18A067;
+  --color-negative:  #E23D4D;
 
   --font-display: "Hanken Grotesk", system-ui, sans-serif;
   --font-body:    "Hanken Grotesk", system-ui, sans-serif;
 
-  --radius-card: 14px;
+  --radius-card: 18px;
 }
 
-* { -webkit-tap-highlight-color: transparent; }
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 html, body, #root { height: 100%; }
 body {
   margin: 0;
@@ -33,10 +36,22 @@ body {
   font-family: var(--font-body);
 }
 
-.font-num { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -0.01em; }
+.font-num { font-variant-numeric: tabular-nums; font-weight: 800; letter-spacing: -0.02em; }
 
-/* Cards em tema claro pedem sombra suave em vez de borda pesada — mais "flutuante" */
-.shadow-card { box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 1px 8px rgba(20,20,30,0.04); }
+/* sombras do design aprovado */
+.shadow-card { box-shadow: 0 1px 3px rgba(13,27,46,.05); }
+.shadow-tile { box-shadow: 0 6px 18px rgba(13,27,46,.10); }
+
+/* animações de entrada (protótipo aprovado) */
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.rise  { animation: rise .5s cubic-bezier(.22,1,.36,1) both; }
+.rise2 { animation: rise .5s .08s cubic-bezier(.22,1,.36,1) both; }
+.rise3 { animation: rise .5s .16s cubic-bezier(.22,1,.36,1) both; }
+@keyframes runway { from { width: 0; } }
+.runway { animation: runway 1s .3s cubic-bezier(.22,1,.36,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .rise, .rise2, .rise3, .runway { animation: none; }
+}
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 8px; }

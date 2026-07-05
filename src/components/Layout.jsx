@@ -15,19 +15,29 @@ const ABAS = [
   { to: '/perfil',   rotulo: 'Perfil',   Icone: User },
 ];
 
-// APP-SHELL: header e nav são partes FIXAS DO LAYOUT (flex), não position:fixed.
-// O <main> tem min-h-0 (obrigatório em flex pra ele conseguir encolher e rolar
-// de verdade) — sem isso a nav de baixo some cortada em telas com conteúdo alto.
+// APP-SHELL (aprovado): header/nav são partes fixas do layout em flex.
+// min-h-0 no <main> é OBRIGATÓRIO — sem ele o flex não deixa rolar e a
+// nav de baixo é cortada em páginas altas.
 export default function Layout({ children }) {
   const loc = useLocation();
+  const noInicio = loc.pathname === '/';
   const tituloAtual = ABAS.find((a) => a.to === loc.pathname)?.rotulo || APP_NAME;
 
   return (
     <div className="h-full flex overflow-hidden bg-bg">
-      {/* SIDEBAR — desktop, fixa na lateral */}
-      <aside className="hidden md:flex md:flex-col md:w-64 md:shrink-0 md:fixed md:inset-y-0 md:border-r md:border-line md:bg-surface md:px-5 md:py-6 z-30">
+      {/* SIDEBAR — desktop */}
+      <aside className="hidden md:flex md:flex-col md:w-64 md:shrink-0 md:fixed md:inset-y-0 md:bg-surface md:border-r md:border-line md:px-5 md:py-6 z-30">
         <div className="flex items-center gap-2.5 px-1 mb-10">
-          <span className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white text-sm font-bold shrink-0">C</span>
+          {/* marca: instrumento (horizonte artificial) simplificado */}
+          <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ background: 'linear-gradient(160deg, var(--color-navy), #1E3A8A)' }}>
+            <svg width="20" height="20" viewBox="0 0 20 20">
+              <circle cx="10" cy="10" r="8" fill="#F0F4FC" />
+              <path d="M 2.3 11.6 A 8 8 0 0 0 17.7 8.4 Z" fill="#0D1B2E" />
+              <rect x="4" y="9.3" width="4" height="1.6" rx="0.8" fill="#F6A723" />
+              <rect x="12" y="9.3" width="4" height="1.6" rx="0.8" fill="#F6A723" />
+              <circle cx="10" cy="10" r="1.4" fill="#F6A723" />
+            </svg>
+          </span>
           <div>
             <p className="font-num text-base font-bold leading-none text-cream">Copiloto</p>
             <p className="text-muted text-[0.65rem] mt-0.5">Financeiro</p>
@@ -37,14 +47,14 @@ export default function Layout({ children }) {
           {ABAS.map(({ to, rotulo, Icone }) => (
             <NavLink key={to} to={to} end={to === '/'}
               className={({ isActive }) =>
-                `relative flex items-center gap-3 pl-4 pr-3 py-2.5 text-sm font-medium transition rounded-md ${
-                  isActive ? 'text-cream bg-surface-2' : 'text-muted hover:text-cream hover:bg-surface-2/60'
+                `relative flex items-center gap-3 pl-4 pr-3 py-2.5 text-sm font-semibold transition rounded-xl ${
+                  isActive ? 'text-accent bg-accent/8' : 'text-muted hover:text-cream hover:bg-surface-2/60'
                 }`
               }>
               {({ isActive }) => (
                 <>
-                  {isActive && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-accent" />}
-                  <Icone size={18} strokeWidth={isActive ? 2.2 : 1.8} />
+                  {isActive && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-accent" />}
+                  <Icone size={18} strokeWidth={isActive ? 2.3 : 1.9} />
                   {rotulo}
                 </>
               )}
@@ -53,20 +63,22 @@ export default function Layout({ children }) {
         </nav>
       </aside>
 
-      {/* COLUNA principal — desloca pra direita da sidebar no desktop */}
+      {/* COLUNA principal */}
       <div className="flex-1 min-w-0 flex flex-col h-full md:ml-64">
-        {/* HEADER — fixo no topo, não rola */}
-        <header className="shrink-0 border-b border-line bg-bg/90 backdrop-blur z-20">
+        {/* HEADER — no Início ele fica NAVY e cola no hero (efeito contínuo);
+            nas outras páginas fica claro normal */}
+        <header className={`shrink-0 z-20 ${noInicio ? '' : 'border-b border-line bg-bg/90 backdrop-blur'}`}
+          style={noInicio ? { background: 'var(--color-navy)' } : undefined}>
           <div className="flex items-center justify-between px-5 md:px-8 pt-5 pb-3 max-w-5xl mx-auto w-full">
             <div>
-              <p className="text-muted text-xs uppercase tracking-[0.16em] md:hidden">{APP_NAME}</p>
-              <h1 className="font-num text-2xl md:text-3xl text-cream">{tituloAtual}</h1>
+              <p className={`text-xs uppercase tracking-[0.16em] md:hidden ${noInicio ? 'text-white/50' : 'text-muted'}`}>{APP_NAME}</p>
+              <h1 className={`font-num text-2xl md:text-3xl ${noInicio ? 'text-white' : 'text-cream'}`}>{tituloAtual}</h1>
             </div>
             <Avisos />
           </div>
         </header>
 
-        {/* MAIN — o ÚNICO que rola. min-h-0 é obrigatório aqui. */}
+        {/* MAIN — o único que rola. min-h-0 obrigatório. */}
         <main className="flex-1 min-h-0 overflow-y-auto">
           <div className="px-5 md:px-8 pt-4 pb-28 md:pb-12 max-w-5xl mx-auto w-full">
             <AnimatePresence mode="wait">
@@ -79,16 +91,16 @@ export default function Layout({ children }) {
           </div>
         </main>
 
-        {/* BOTTOM NAV — mobile, parte do layout (flex), sempre visível */}
+        {/* BOTTOM NAV — mobile */}
         <nav className="md:hidden shrink-0 bg-surface border-t border-line">
           <div className="flex items-stretch justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
             {ABAS.map(({ to, rotulo, Icone }) => (
               <NavLink key={to} to={to} end={to === '/'}
-                className={({ isActive }) => `relative flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg text-[0.68rem] transition ${isActive ? 'text-accent' : 'text-muted'}`}>
+                className={({ isActive }) => `relative flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg text-[0.68rem] transition ${isActive ? 'text-accent font-bold' : 'text-muted'}`}>
                 {({ isActive }) => (
                   <>
                     {isActive && <motion.span layoutId="navdot" className="absolute -top-0.5 h-1 w-1 rounded-full bg-accent" />}
-                    <Icone size={21} strokeWidth={isActive ? 2.4 : 1.8} />
+                    <Icone size={21} strokeWidth={isActive ? 2.4 : 1.9} />
                     {rotulo}
                   </>
                 )}
@@ -98,7 +110,6 @@ export default function Layout({ children }) {
         </nav>
       </div>
 
-      {/* Overlays: FAB de lançar, onboarding, notificações nativas */}
       <RegistroRapido />
       <Onboarding />
       <SincronizadorNativo />
