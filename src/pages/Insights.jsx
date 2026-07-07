@@ -8,6 +8,7 @@ import Card from '../components/ui/Card';
 import { formatarBRL } from '../components/ui/Money';
 
 export default function Insights() {
+  const [catAberta, setCatAberta] = useState(null);
   const { lancamentos } = useLancamentos();
   const { recorrentes } = useRecorrentes();
   const { parcelamentos } = useParcelamentos();
