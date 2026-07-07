@@ -4,11 +4,13 @@ import { useRecorrentes } from '../hooks/useRecorrentes';
 import { useParcelamentos } from '../hooks/useParcelamentos';
 import { useCofres } from '../hooks/useCofres';
 import { useEnvelopes } from '../hooks/useEnvelopes';
+import { useOrcamentos } from '../hooks/useOrcamentos';
 import { useCompromissos } from '../hooks/useCompromissos';
 import { useCartoes } from '../hooks/useCartoes';
 import { useFornecedores } from '../hooks/useFornecedores';
 import { useConvidados } from '../hooks/useConvidados';
 import Card from './ui/Card';
+import { salvarECompartilhar } from '../native/arquivos';
 
 export default function Backup() {
   const lanc = useLancamentos();
@@ -16,6 +18,7 @@ export default function Backup() {
   const parc = useParcelamentos();
   const cof = useCofres();
   const env = useEnvelopes();
+  const orc = useOrcamentos();
   const comp = useCompromissos();
   const cart = useCartoes();
   const forn = useFornecedores();
@@ -27,11 +30,11 @@ export default function Backup() {
   // Colecoes de Backup (export/import) — sem fornecedores/convidados (são por meta)
   const colecoes = {
     lancamentos: lanc.lancamentos, recorrentes: rec.recorrentes, parcelamentos: parc.parcelamentos,
-    cofres: cof.cofres, envelopes: env.envelopes, compromissos: comp.compromissos, cartoes: cart.cartoes,
+    cofres: cof.cofres, envelopes: env.envelopes, orcamentos: orc.orcamentos, compromissos: comp.compromissos, cartoes: cart.cartoes,
   };
   const addFns = {
     lancamentos: lanc.adicionar, recorrentes: rec.adicionar, parcelamentos: parc.adicionar,
-    cofres: cof.adicionar, envelopes: env.adicionar, compromissos: comp.adicionar, cartoes: cart.adicionar,
+    cofres: cof.adicionar, envelopes: env.adicionar, orcamentos: orc.adicionar, compromissos: comp.adicionar, cartoes: cart.adicionar,
   };
 
   // Para reset — inclui TUDO (fornecedores e convidados também)
@@ -41,23 +44,29 @@ export default function Backup() {
     { nome: 'parcelamentos', itens: parc.parcelamentos, remover: parc.remover },
     { nome: 'cofres', itens: cof.cofres, remover: cof.remover },
     { nome: 'envelopes', itens: env.envelopes, remover: env.remover },
+    { nome: 'orcamentos', itens: orc.orcamentos, remover: orc.remover },
     { nome: 'compromissos', itens: comp.compromissos, remover: comp.remover },
     { nome: 'cartões', itens: cart.cartoes, remover: cart.remover },
     { nome: 'fornecedores', itens: forn.fornecedores, remover: forn.remover },
     { nome: 'convidados', itens: conv.convidados, remover: conv.remover },
   ];
 
-  function exportar() {
+  async function exportar() {
     const dados = {};
     for (const k in colecoes) dados[k] = (colecoes[k] || []).map(({ id, ...resto }) => resto);
     const conteudo = JSON.stringify({ app: 'copiloto-financeiro', versao: 1, exportadoEm: new Date().toISOString(), dados }, null, 2);
-    const url = URL.createObjectURL(new Blob([conteudo], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url; a.download = `copiloto-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click(); URL.revokeObjectURL(url);
-    const total = Object.values(dados).reduce((s, arr) => s + arr.length, 0);
-    setMsg(`✅ Backup baixado (${total} itens).`);
+    try {
+      await salvarECompartilhar({
+        nome: `savings-trick-backup-${new Date().toISOString().slice(0, 10)}.json`,
+        mime: 'application/json',
+        dados: conteudo,
+      });
+      setMsg('✅ Backup exportado.');
+    } catch (e) {
+      setMsg('⚠️ Não consegui exportar: ' + (e?.message || e));
+    }
   }
+
 
   async function importar(e) {
     const file = e.target.files[0];

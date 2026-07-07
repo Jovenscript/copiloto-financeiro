@@ -56,13 +56,7 @@ export default function Cartoes() {
             const fatura = faturaCartao(c.id, lancamentos, ym, c.limite);
             return (
               <Card key={c.id} className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-num text-lg">{c.nome}</p>
-                    <p className="text-muted text-xs">fecha dia {c.diaFechamento} · vence dia {c.diaVencimento}</p>
-                  </div>
-                  <button onClick={() => remover(c.id)} className="text-muted/40 hover:text-negative text-lg">×</button>
-                </div>
+                <CabecalhoCartao c={c} onAtualizar={atualizar} onRemover={() => remover(c.id)} />
 
                 <div className="bg-surface-2 rounded-xl px-4 py-3">
                   <p className="text-muted text-[0.65rem] uppercase tracking-wider">Fatura deste mês</p>
@@ -98,6 +92,50 @@ export default function Cartoes() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+// Cabeçalho do cartão — toca no nome pra editar tudo (nome, limite, dia fechamento/vencimento).
+function CabecalhoCartao({ c, onAtualizar, onRemover }) {
+  const [editar, setEditar] = useState(false);
+  const [form, setForm] = useState({ nome: c.nome, limite: c.limite, diaFechamento: c.diaFechamento, diaVencimento: c.diaVencimento });
+
+  async function salvar() {
+    await onAtualizar(c.id, {
+      nome: (form.nome || '').trim() || c.nome,
+      limite: Number(form.limite) || 0,
+      diaFechamento: Math.min(31, Math.max(1, Number(form.diaFechamento) || c.diaFechamento)),
+      diaVencimento: Math.min(31, Math.max(1, Number(form.diaVencimento) || c.diaVencimento)),
+    });
+    setEditar(false);
+  }
+
+  if (editar) {
+    return (
+      <div className="space-y-2 border border-accent/40 rounded-xl p-3 -m-1">
+        <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome" className={inputCls} />
+        <input type="number" inputMode="decimal" value={form.limite} onChange={(e) => setForm({ ...form, limite: e.target.value })} placeholder="Limite" className={inputCls} />
+        <div className="flex gap-2">
+          <input type="number" inputMode="numeric" min={1} max={31} value={form.diaFechamento} onChange={(e) => setForm({ ...form, diaFechamento: e.target.value })} placeholder="Fecha dia" className={inputCls} />
+          <input type="number" inputMode="numeric" min={1} max={31} value={form.diaVencimento} onChange={(e) => setForm({ ...form, diaVencimento: e.target.value })} placeholder="Vence dia" className={inputCls} />
+        </div>
+        <div className="flex gap-2">
+          <button onClick={salvar} className="flex-1 bg-accent text-white font-semibold rounded-xl py-2 text-sm">Salvar</button>
+          <button onClick={() => { setEditar(false); setForm({ nome: c.nome, limite: c.limite, diaFechamento: c.diaFechamento, diaVencimento: c.diaVencimento }); }} className="bg-surface-2 border border-line rounded-xl px-4 text-sm text-cream">Cancelar</button>
+          <button onClick={onRemover} className="text-negative/70 hover:text-negative px-2 text-sm">Excluir</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start justify-between">
+      <button onClick={() => setEditar(true)} className="text-left">
+        <p className="font-num text-lg text-cream">{c.nome}</p>
+        <p className="text-muted text-xs">fecha dia {c.diaFechamento} · vence dia {c.diaVencimento} · toque pra editar</p>
+      </button>
+      <button onClick={onRemover} className="text-muted/40 hover:text-negative text-lg">×</button>
     </div>
   );
 }

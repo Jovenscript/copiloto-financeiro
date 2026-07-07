@@ -8,7 +8,7 @@ import Money from '../components/ui/Money';
 import ImportarPlanilha from '../components/ImportarPlanilha';
 
 export default function Lancamentos() {
-  const { lancamentos, adicionar, remover, carregando } = useLancamentos();
+  const { lancamentos, adicionar, atualizar, remover, carregando } = useLancamentos();
   const { cartoes } = useCartoes();
 
   const [importAberto, setImportAberto] = useState(false);
@@ -127,37 +127,9 @@ export default function Lancamentos() {
         ) : (
           <div className="space-y-2">
             <AnimatePresence initial={false}>
-              {lancamentos.slice(0, 50).map((l) => {
-                const info = infoCategoria(l.categoria);
-                return (
-                  <motion.div
-                    key={l.id}
-                    layout
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="group flex items-center gap-3 bg-surface border border-line rounded-2xl px-4 py-3"
-                  >
-                    <span className="text-xl">{info.icone}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm">{l.descricao}</p>
-                      <p className="text-muted text-xs">{formatarData(l.data)} · {info.label}</p>
-                    </div>
-                    <Money
-                      valor={l.tipo === 'receita' ? l.valor : -l.valor}
-                      colorir
-                      className="text-sm"
-                    />
-                    <button
-                      onClick={() => remover(l.id)}
-                      className="text-muted/40 hover:text-negative transition text-lg leading-none px-1"
-                      title="Remover"
-                    >
-                      ×
-                    </button>
-                  </motion.div>
-                );
-              })}
+              {lancamentos.slice(0, 50).map((l) => (
+                <LinhaLancamento key={l.id} l={l} onAtualizar={atualizar} onRemover={() => remover(l.id)} />
+              ))}
             </AnimatePresence>
           </div>
         )}
@@ -170,4 +142,67 @@ function formatarData(iso) {
   if (!iso) return '';
   const [a, m, d] = iso.split('-');
   return `${d}/${m}`;
+}
+
+// Linha da lista — toca pra editar TUDO inline (valor, descrição, categoria, data, tipo).
+function LinhaLancamento({ l, onAtualizar, onRemover }) {
+  const [editar, setEditar] = useState(false);
+  const [form, setForm] = useState({ valor: l.valor, descricao: l.descricao, categoria: l.categoria, data: l.data, tipo: l.tipo });
+  const info = infoCategoria(l.categoria);
+  const cats = form.tipo === 'receita' ? categoriasReceita() : categoriasDespesa();
+
+  async function salvar() {
+    await onAtualizar(l.id, {
+      valor: Number(form.valor) || l.valor,
+      descricao: (form.descricao || '').trim() || l.descricao,
+      categoria: form.categoria,
+      data: form.data || l.data,
+      tipo: form.tipo,
+    });
+    setEditar(false);
+  }
+
+  if (editar) {
+    const inputCls = 'w-full bg-surface-2 border border-line rounded-xl px-3 py-2.5 outline-none focus:border-accent transition text-sm text-cream';
+    return (
+      <motion.div layout className="bg-surface border border-accent/40 rounded-2xl p-4 space-y-2">
+        <div className="grid grid-cols-2 gap-2 bg-bg rounded-xl p-1">
+          {['despesa', 'receita'].map((t) => (
+            <button key={t} onClick={() => setForm({ ...form, tipo: t })}
+              className={`py-1.5 rounded-lg text-xs font-semibold transition ${form.tipo === t ? (t === 'despesa' ? 'bg-negative/15 text-negative' : 'bg-positive/15 text-positive') : 'text-muted'}`}>
+              {t === 'despesa' ? '− Despesa' : '+ Receita'}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input type="number" inputMode="decimal" step="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="Valor" className={inputCls} />
+          <input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} className={inputCls} />
+        </div>
+        <input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Descrição" className={inputCls} />
+        <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })} className={inputCls}>
+          {cats.map((c) => <option key={c.id} value={c.id}>{c.icone} {c.label}</option>)}
+        </select>
+        <div className="flex gap-2">
+          <button onClick={salvar} className="flex-1 bg-accent text-white font-semibold rounded-xl py-2.5 text-sm">Salvar</button>
+          <button onClick={() => { setEditar(false); setForm({ valor: l.valor, descricao: l.descricao, categoria: l.categoria, data: l.data, tipo: l.tipo }); }} className="bg-surface-2 border border-line rounded-xl px-4 text-sm text-cream">Cancelar</button>
+          <button onClick={onRemover} className="text-negative/70 hover:text-negative px-2 text-sm">Excluir</button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+      className="group flex items-center gap-3 bg-surface border border-line rounded-2xl px-4 py-3">
+      <button onClick={() => setEditar(true)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+        <span className="text-xl">{info.icone}</span>
+        <div className="flex-1 min-w-0">
+          <p className="truncate text-sm text-cream">{l.descricao}</p>
+          <p className="text-muted text-xs">{formatarData(l.data)} · {info.label}</p>
+        </div>
+      </button>
+      <Money valor={l.tipo === 'receita' ? l.valor : -l.valor} colorir className="text-sm" />
+      <button onClick={onRemover} className="text-muted/40 hover:text-negative transition text-lg leading-none px-1" title="Remover">×</button>
+    </motion.div>
+  );
 }

@@ -53,15 +53,15 @@ export default function Insights() {
             {cats.slice(0, 8).map((c) => {
               const info = infoCategoria(c.categoria);
               return (
-                <div key={c.categoria}>
+                <button key={c.categoria} onClick={() => setCatAberta(c.categoria)} className="block w-full text-left active:opacity-70 transition">
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-cream/90">{info.icone} {info.label}</span>
-                    <span className="font-num">{formatarBRL(c.total)}</span>
+                    <span className="font-num">{formatarBRL(c.total)} ›</span>
                   </div>
                   <div className="h-2 bg-bg rounded-full overflow-hidden">
                     <div className="h-full bg-accent rounded-full" style={{ width: `${(c.total / maiorCat) * 100}%` }} />
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -80,11 +80,74 @@ export default function Insights() {
         </Card>
       )}
 
+      {/* HISTÓRICO DA CATEGORIA — toca numa categoria acima pra abrir */}
+      {catAberta && <HistoricoCategoria categoria={catAberta} lancamentos={lancamentos} onFechar={() => setCatAberta(null)} />}
+
       {cats.length === 0 && (
         <Card className="text-center py-8">
           <p className="text-muted text-sm">Lance alguns gastos pra ver suas análises aqui.</p>
         </Card>
       )}
     </div>
+  );
+}
+
+// Histórico completo de uma categoria, filtrável por mês.
+function HistoricoCategoria({ categoria, lancamentos, onFechar }) {
+  const info = infoCategoria(categoria);
+  // meses disponíveis = meses em que houve gasto nessa categoria
+  const meses = [...new Set(
+    lancamentos.filter((l) => l.tipo === 'despesa' && l.categoria === categoria).map((l) => (l.data || '').slice(0, 7))
+  )].filter(Boolean).sort().reverse();
+  const [mes, setMes] = useState(meses[0] || chaveMes());
+
+  const itens = lancamentos
+    .filter((l) => l.tipo === 'despesa' && l.categoria === categoria && (l.data || '').startsWith(mes))
+    .sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+  const total = itens.reduce((s, l) => s + (Number(l.valor) || 0), 0);
+
+  const labelMes = (ym) => {
+    const [a, m] = ym.split('-');
+    return new Date(Number(a), Number(m) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  };
+
+  return (
+    <Card className="space-y-3 border border-accent/30">
+      <div className="flex items-center justify-between">
+        <p className="font-num text-lg text-cream">{info.icone} Histórico · {info.label}</p>
+        <button onClick={onFechar} className="text-muted hover:text-cream text-lg leading-none px-1">×</button>
+      </div>
+
+      {/* filtro de mês */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        {meses.map((m) => (
+          <button key={m} onClick={() => setMes(m)}
+            className={`shrink-0 px-3 py-1.5 rounded-lg text-xs capitalize transition ${mes === m ? 'bg-accent text-white' : 'bg-surface-2 text-muted'}`}>
+            {labelMes(m)}
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-surface-2 rounded-xl px-4 py-2.5 flex items-center justify-between">
+        <span className="text-muted text-xs uppercase tracking-wide">Total no mês</span>
+        <span className="font-num text-lg text-cream">{formatarBRL(total)}</span>
+      </div>
+
+      {itens.length === 0 ? (
+        <p className="text-muted text-sm">Nenhum gasto nessa categoria em {labelMes(mes)}.</p>
+      ) : (
+        <div className="space-y-1.5 max-h-72 overflow-y-auto">
+          {itens.map((l) => (
+            <div key={l.id} className="flex items-center justify-between text-sm border-b border-line/60 pb-1.5">
+              <div className="min-w-0">
+                <p className="text-cream/90 truncate">{l.descricao}</p>
+                <p className="text-muted text-xs">{l.data.slice(8, 10)}/{l.data.slice(5, 7)}/{l.data.slice(0, 4)}</p>
+              </div>
+              <span className="font-num text-negative shrink-0 pl-2">− {formatarBRL(l.valor)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }

@@ -4,6 +4,7 @@ import { extratoPeriodo } from '../core/calculos';
 import { infoCategoria } from '../core/schema';
 import Card from './ui/Card';
 import { formatarBRL } from './ui/Money';
+import { salvarECompartilhar } from '../native/arquivos';
 
 export default function Extrato() {
   const { lancamentos } = useLancamentos();
@@ -16,23 +17,56 @@ export default function Extrato() {
   const totalEntrou = itens.filter((l) => l.tipo === 'receita').reduce((s, l) => s + (Number(l.valor) || 0), 0);
   const totalSaiu = itens.filter((l) => l.tipo === 'despesa').reduce((s, l) => s + (Number(l.valor) || 0), 0);
 
-  function baixarCSV() {
+  async function baixarCSV() {
     const linhas = [['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Pago']];
     itens.forEach((l) => {
       linhas.push([l.data, l.tipo, infoCategoria(l.categoria).label, l.descricao, String(l.valor).replace('.', ','), l.pago ? 'Sim' : 'Não']);
     });
     const csv = linhas.map((r) => r.map((c) => `"${c}"`).join(';')).join('\n');
-    const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
-    const a = document.createElement('a');
-    a.href = url; a.download = `extrato-${dias}dias-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click(); URL.revokeObjectURL(url);
+    await salvarECompartilhar({
+      nome: `extrato-${dias}dias-${new Date().toISOString().slice(0, 10)}.csv`,
+      mime: 'text/csv',
+      dados: '\ufeff' + csv,
+    });
   }
 
-  // "Baixar PDF": usa a função de impressão do navegador. Não precisa de
-  // nenhuma biblioteca nova — no diálogo que abre, escolher "Salvar como PDF".
-  // O CSS @media print (em index.css) esconde nav/header e deixa só o extrato.
-  function baixarPDF() {
-    window.print();
+  // PDF de verdade (jsPDF) — funciona no APK, diferente do window.print.
+  async function baixarPDF() {
+    const { jsPDF } = await import('jspdf');
+    const pdf = new jsPDF();
+    const W = pdf.internal.pageSize.getWidth();
+    let y = 18;
+
+    pdf.setFontSize(16); pdf.setFont(undefined, 'bold');
+    pdf.text('Extrato — Savings Trick', 14, y); y += 7;
+    pdf.setFontSize(10); pdf.setFont(undefined, 'normal'); pdf.setTextColor(110);
+    pdf.text(`Últimos ${dias} dias · gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, y); y += 6;
+    pdf.setTextColor(0);
+    pdf.text(`Entrou: ${formatarBRL(totalEntrou)}   ·   Saiu: ${formatarBRL(totalSaiu)}`, 14, y); y += 8;
+    pdf.setDrawColor(200); pdf.line(14, y, W - 14, y); y += 6;
+
+    itens.forEach((l) => {
+      if (y > 278) { pdf.addPage(); y = 18; }
+      const info = infoCategoria(l.categoria);
+      const sinal = l.tipo === 'receita' ? '+' : '-';
+      pdf.setFontSize(10); pdf.setFont(undefined, 'bold');
+      pdf.text(`${l.data.slice(8,10)}/${l.data.slice(5,7)}`, 14, y);
+      pdf.setFont(undefined, 'normal');
+      pdf.text(`${l.descricao}`.slice(0, 52), 34, y);
+      pdf.text(info.label, 34, y + 4);
+      pdf.setFont(undefined, 'bold');
+      pdf.text(`${sinal} ${formatarBRL(l.valor)}`, W - 14, y, { align: 'right' });
+      pdf.setFont(undefined, 'normal');
+      y += 10;
+    });
+
+    const base64 = pdf.output('datauristring').split(',')[1];
+    await salvarECompartilhar({
+      nome: `extrato-${dias}dias-${new Date().toISOString().slice(0, 10)}.pdf`,
+      mime: 'application/pdf',
+      dados: base64,
+      base64: true,
+    });
   }
 
   return (

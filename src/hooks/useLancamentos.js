@@ -2,7 +2,7 @@
 // já em tempo real. Component nenhum precisa saber de Firestore.
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ouvirLancamentos, adicionarLancamento, removerLancamento } from '../services/lancamentos';
+import { ouvirLancamentos, adicionarLancamento, removerLancamento, atualizarLancamento } from '../services/lancamentos';
 
 export function useLancamentos() {
   const { user } = useAuth();
@@ -23,6 +23,7 @@ export function useLancamentos() {
     lancamentos,
     carregando,
     adicionar: (l) => adicionarLancamento(user.uid, l),
+    atualizar: (id, p) => atualizarLancamento(user.uid, id, p),
     remover: (id) => removerLancamento(user.uid, id),
   };
 }
